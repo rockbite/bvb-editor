@@ -142,7 +142,7 @@ public class BoundEffect {
         scale = val;
         particleEffect.reset(true);
         particleEffect.scaleEffect(scale);
-    }
+}
 
     public void setBehind(boolean checked) {
         isBehind = checked;

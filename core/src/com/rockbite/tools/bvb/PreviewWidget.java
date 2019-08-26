@@ -151,7 +151,7 @@ public class PreviewWidget extends Actor {
 
     public void scrolled(int amount) {
         if(touchDisabled) return;
-        ((OrthographicCamera)viewport.getCamera()).zoom -= amount*0.05f;
+        ((OrthographicCamera)viewport.getCamera()).zoom += amount*0.05f;
         if(((OrthographicCamera)viewport.getCamera()).zoom < 0) ((OrthographicCamera)viewport.getCamera()).zoom = 0.1f;
     }
 
@@ -184,10 +184,10 @@ public class PreviewWidget extends Actor {
         renderer = new SkeletonRenderer();
         renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
 
-        setSize(700, 655);
+        setSize(700, 855);
 
-        viewport = new FitViewport(700, 655);
-        fbo = new FrameBuffer(Pixmap.Format.RGB888, 700, 655, false);
+        viewport = new FitViewport(700, 855);
+        fbo = new FrameBuffer(Pixmap.Format.RGB888, 700, 855, false);
     }
 
     public boolean initSpine(String animPath, String planBPath) {
@@ -213,7 +213,7 @@ public class PreviewWidget extends Actor {
 
         TextureAtlas atlas = new TextureAtlas(atlasFileHandle);
         SkeletonJson json = new SkeletonJson(atlas); // This loads skeleton JSON data, which is stateless.
-        json.setScale(0.6f);
+        json.setScale(0.3968f);
         SkeletonData skeletonData = json.readSkeletonData(jsonFileHandle);
 
         skeleton = new Skeleton(skeletonData); // Skeleton holds skeleton state (bone positions, slot attachments, etc).
@@ -296,7 +296,7 @@ public class PreviewWidget extends Actor {
 
         BoundEffect effect = new BoundEffect();
         effect.load(model.path);
-        effect.setScale(0.6f);
+        effect.setScale(50f);
         effect.getEffect().start();
 
 
@@ -552,7 +552,7 @@ public class PreviewWidget extends Actor {
 
     public void drawFBO(Batch batch, float parentAlpha) {
         fbo.begin();
-        viewport.update(700, 655);
+        viewport.update(700, 855);
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -576,7 +576,7 @@ public class PreviewWidget extends Actor {
         Texture fboTExture = fbo.getColorBufferTexture();
         Sprite sprite  = new Sprite(fboTExture);
         sprite.setPosition(200, 0);
-        sprite.setSize(700, 655);
+        sprite.setSize(700, 855);
         sprite.flip(false, true);
         sprite.draw(batch);
     }
