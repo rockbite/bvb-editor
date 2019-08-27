@@ -803,6 +803,9 @@ public class PreviewWidget extends Actor {
                 vfx.isBehind = be.isBehind;
                 vfx.scale = be.scale;
 
+                vfx.offset.x /= 50f;
+                vfx.offset.x /= 50f;
+
                 exportData.boundVFXList.get(animName).add(vfx);
             }
         }
