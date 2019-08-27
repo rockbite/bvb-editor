@@ -60,6 +60,7 @@ public class MainStage extends Stage {
     private String projectPath;
     private String projectFilePath;
     private String exportFilePath;
+    private long spineLastModified;
 
     public MainStage() {
         super(new ScalingViewport(Scaling.stretch, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), new OrthographicCamera()),
@@ -101,7 +102,7 @@ public class MainStage extends Stage {
         mainTable.add(topTable).expandX().top().colspan(2).fillX();
         mainTable.row();
         SplitPane splitPane = new SplitPane(leftTable, rightTable, false, skin);
-        splitPane.setSplitAmount(0.22f);
+        splitPane.setSplitAmount(0.32f);
         mainTable.add(splitPane).expand().fill();
 
         addListener(new InputListener() {
@@ -156,7 +157,7 @@ public class MainStage extends Stage {
                     Dialogs.showOKDialog (MainStage.this, "Help", " Drag & Drop .json to the right and .p files to the left panels \n to load Spine and VFX effects. \n\n Hold Shift for Bone Binding Mode \n Hold Alt for bone Offset Mode \n\n ");
                 }
                 if(text.equals("About")) {
-                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.2", "Breaking news, zoom scroll is now reversed. Big change. Much wow");
+                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.4", "This is new about text. yes it changed.");
                 }
             }
         };
@@ -287,6 +288,10 @@ public class MainStage extends Stage {
                 previewWidget.enableTouch();
                 loadProjectFile(file.get(0).path());
             }
+            @Override
+            public void canceled () {
+                previewWidget.enableTouch();
+            }
         });
         addActor(fileChooser.fadeIn());
     }
@@ -309,6 +314,10 @@ public class MainStage extends Stage {
                     String path = file.get(0).path();
                     exportFilePath = path;
                     exportToFile(path);
+                }
+                @Override
+                public void canceled () {
+                    previewWidget.enableTouch();
                 }
             });
             addActor(fileChooser.fadeIn());
@@ -333,6 +342,10 @@ public class MainStage extends Stage {
                     String path = file.get(0).path();
                     projectFilePath = path;
                     saveProjectFile(path);
+                }
+                @Override
+                public void canceled () {
+                    previewWidget.enableTouch();
                 }
             });
             addActor(fileChooser.fadeIn());
@@ -380,6 +393,9 @@ public class MainStage extends Stage {
     public void dropSpine(String path) {
         previewWidget.initSpine(path, path);
         spineJsonPath = path;
+
+        File file = new File(path);
+        spineLastModified = file.lastModified();
     }
 
     public void dropLibraryFile(String path) {
@@ -496,7 +512,11 @@ public class MainStage extends Stage {
                     // now let's use this project data
                     spineJsonPath = projectData.spineJsonPath;
 
+                    previewWidget.cleanData();
                     previewWidget.initSpine(spineJsonPath, path);
+
+                    File jsonFile = new File(spineJsonPath);
+                    spineLastModified = jsonFile.lastModified();
 
                     // now load VFX list
                     fxListAdapter.clear();
@@ -542,11 +562,25 @@ public class MainStage extends Stage {
                 reloadVFX(model);
             }
         }
+
+        //check spine
+        if(spineJsonPath != null) {
+            File file = new File(spineJsonPath);
+            if (file.lastModified() > spineLastModified) {
+                reloadSpine(spineJsonPath);
+                spineLastModified = file.lastModified();
+            }
+        }
     }
 
     public void setHintText(String text) {
         leftHintLabel.setText(text);
         leftHintLabel.setPosition(205, getHeight() - leftHintLabel.getHeight() - 35);
+    }
+
+    private void reloadSpine(String jsonPath) {
+        previewWidget.initSpine(jsonPath, jsonPath);
+        spineJsonPath = jsonPath;
     }
 
     private void reloadVFX(VFXListModel oldModel) {

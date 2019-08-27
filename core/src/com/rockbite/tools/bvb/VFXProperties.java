@@ -32,7 +32,7 @@ public class VFXProperties extends FXProperties<BoundEffect> {
 
         setSkin(skin);
 
-        setSize(198, 250);
+        setSize(198+150-10, 250);
         //setPosition(getWidth()-getWidth(), getHeight() - getHeight() - 27f);
         setPosition(-1, 0);
 
@@ -95,14 +95,14 @@ public class VFXProperties extends FXProperties<BoundEffect> {
         Table seTbl = new Table();
         seTbl.add(startEventLabel).left().expandX();
         seTbl.add().width(15);
-        seTbl.add(startEventValue).right().width(105);
+        seTbl.add(startEventValue).right().width(105+140);
         body.add(seTbl).colspan(2).expandX().padBottom(4).padTop(4);
         body.row();
 
         Table eeTbl = new Table();
         eeTbl.add(endEventLabel).left().expandX();
         eeTbl.add().width(19);
-        eeTbl.add(endEventValue).right().width(105);
+        eeTbl.add(endEventValue).right().width(105+140);
         body.add(eeTbl).colspan(2).expandX().padBottom(4);
 
         body.row();

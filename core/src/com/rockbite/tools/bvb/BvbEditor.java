@@ -80,11 +80,11 @@ public class BvbEditor extends ApplicationAdapter implements DropTargetListener{
 				if(paths.length == 1) {
 					dtde.dropComplete(true);
 
-					if(dtde.getLocation().x < 184) {
+					if(dtde.getLocation().x < 184+150) {
 						mainStage.dropLibraryFile(paths[0]);
 					}
 
-					if(dtde.getLocation().x > 188) {
+					if(dtde.getLocation().x > 188+150) {
 						mainStage.dropMainFile(paths[0]);
 					}
 

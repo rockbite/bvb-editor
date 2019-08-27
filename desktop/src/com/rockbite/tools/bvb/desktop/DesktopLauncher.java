@@ -10,7 +10,7 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.title = "VFX Editor 1.1.2";
-		config.width = 900;
+		config.width = 1050; //900
 		config.height = 880;
 		config.resizable = false;
 		BvbEditor editor = new BvbEditor();

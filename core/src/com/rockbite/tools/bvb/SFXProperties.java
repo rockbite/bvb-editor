@@ -20,7 +20,7 @@ public class SFXProperties extends FXProperties<SFXListModel> {
 
         setSkin(skin);
 
-        setSize(198, 250);
+        setSize(198+150-10, 250);
         //setPosition(getWidth()-getWidth(), getHeight() - getHeight() - 27f);
         setPosition(-1, 0);
 

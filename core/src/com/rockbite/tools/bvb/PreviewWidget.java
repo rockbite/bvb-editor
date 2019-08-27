@@ -64,6 +64,9 @@ public class PreviewWidget extends Actor {
 
     float speedMultiplier = 1f;
 
+    private float PREF_WIDTH = 700;
+    private float SELF_POS;
+
     private boolean paused = false;
 
     private ChangeListener changeListener;
@@ -80,7 +83,6 @@ public class PreviewWidget extends Actor {
     FrameBuffer fbo;
 
     private boolean shiftToggle = false;
-
     private void addBoundEffect(BoundEffect effect) {
         String animation = currentAnimation;
         if(!boundEffects.containsKey(animation)) {
@@ -164,6 +166,10 @@ public class PreviewWidget extends Actor {
         speedMultiplier = value/100f;
     }
 
+    public void cleanData() {
+        boundEffects.clear();
+    }
+
 
     public interface ChangeListener {
         void onAnimationChanged(Skeleton skeleton);
@@ -184,10 +190,13 @@ public class PreviewWidget extends Actor {
         renderer = new SkeletonRenderer();
         renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
 
-        setSize(700, 855);
+        setSize(PREF_WIDTH, 855);
 
-        viewport = new FitViewport(700, 855);
-        fbo = new FrameBuffer(Pixmap.Format.RGB888, 700, 855, false);
+        SELF_POS = Gdx.graphics.getWidth() - PREF_WIDTH - 20f;
+        PREF_WIDTH += 20;
+
+        viewport = new FitViewport(PREF_WIDTH, 855);
+        fbo = new FrameBuffer(Pixmap.Format.RGB888, (int) PREF_WIDTH, 855, false);
     }
 
     public boolean initSpine(String animPath, String planBPath) {
@@ -207,7 +216,9 @@ public class PreviewWidget extends Actor {
             return false;
         }
 
-        boundEffects.clear();
+        if(state != null) state.clearTracks();
+        skeleton = null;
+        state = null;
 
         FileHandle atlasFileHandle = Gdx.files.absolute(jsonFileHandle.pathWithoutExtension() + ".atlas");
 
@@ -226,15 +237,23 @@ public class PreviewWidget extends Actor {
         state = new AnimationState(stateData); // Holds the animation state for a skeleton (current animation, time, etc).
         state.setTimeScale(1f); // Slow all animations down to 50% speed.
 
+        if(currentAnimation == null) {
+            currentAnimation = skeleton.getData().getAnimations().get(0).getName();
+        } else {
+            if(skeletonData.findAnimation(currentAnimation) == null) {
+                // this animation no longer exists.
+                currentAnimation = skeleton.getData().getAnimations().get(0).getName();
+            }
+        }
         // Queue animations on track 0.
-        state.setAnimation(0, skeleton.getData().getAnimations().get(0).getName(), true);
-        currentAnimation = skeleton.getData().getAnimations().get(0).getName();
+        state.setAnimation(0, currentAnimation, true);
 
         eventList.clear();
         for(EventData eventData : skeletonData.getEvents()) {
             eventList.add(eventData.getName());
         }
 
+        // new event list should be updated
         fxProperties.updateEventList(eventList);
         sfxProperties.updateEventList(eventList);
 
@@ -251,9 +270,38 @@ public class PreviewWidget extends Actor {
             }
         });
 
+
+
+        // always regenerate bone map
         boneMap.clear();
         for(Bone bone: skeleton.getBones()) {
             boneMap.put(bone.getData().getName(), bone);
+        }
+
+        // are we just opening new one or replacing existing
+
+         //let's sync the boundEffects map
+        //remove existing animations and bones.
+        Array<String> removeAnim = new Array<String>();
+        for(String animName: boundEffects.keySet()) {
+            if(animName == null) continue;
+            if(skeletonData.findAnimation(animName) == null) {
+                // remove this from boundEffects
+                removeAnim.add(animName);
+            }
+            Array<BoundEffect> removeEff = new Array<BoundEffect>();
+            for(BoundEffect eff: boundEffects.get(animName)) {
+                // does this bone exist?
+                if(!boneMap.containsKey(eff.getBoneName())) {
+                    removeEff.add(eff);
+                }
+            }
+            for(BoundEffect eff: removeEff) {
+                boundEffects.get(animName).removeValue(eff, true);
+            }
+        }
+        for(String anim: removeAnim) {
+            boundEffects.remove(anim);
         }
 
         return true;
@@ -381,7 +429,6 @@ public class PreviewWidget extends Actor {
     }
 
     private void detectInputs() {
-
         MainStage mainStage = (MainStage) getStage();
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
@@ -448,7 +495,7 @@ public class PreviewWidget extends Actor {
 
         if(touchDisabled) return;
 
-        if(Gdx.input.getX() < 188 || getStage().getHeight() - Gdx.input.getY() > getStage().getHeight() - 30) {
+        if(Gdx.input.getX() < 188+150 || getStage().getHeight() - Gdx.input.getY() > getStage().getHeight() - 30) {
             return;
         }
 
@@ -509,7 +556,7 @@ public class PreviewWidget extends Actor {
             unselectEffect();
         }
 
-        if(Gdx.input.isTouched() && Gdx.input.getX() > 188) {
+        if(Gdx.input.isTouched() && Gdx.input.getX() > 188+150) {
             currPos.set(mouseScreenPos); // let's use screen coords here
             currPos.sub(lastPos); // curr pos is now offset
             // are we panning?
@@ -517,7 +564,7 @@ public class PreviewWidget extends Actor {
             if(currentlyMovingEffect != null) {
                 // no we are moving an effect
                 currentlyMovingEffect.getOffset().add(currPos);
-            } else if( firstTouchPos.x > 200) {
+            } else if( firstTouchPos.x > SELF_POS) {
                 // yeah we are panning
                 float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
                 globalOffset.sub(currPos.scl(zoom));
@@ -529,7 +576,7 @@ public class PreviewWidget extends Actor {
     }
 
     private void setMousePos() {
-        tmp.set(Gdx.input.getX()-200, Gdx.input.getY());
+        tmp.set(Gdx.input.getX()-SELF_POS, Gdx.input.getY());
         viewport.unproject(tmp);
         mousePos.set(tmp);
 
@@ -552,7 +599,7 @@ public class PreviewWidget extends Actor {
 
     public void drawFBO(Batch batch, float parentAlpha) {
         fbo.begin();
-        viewport.update(700, 855);
+        viewport.update((int) PREF_WIDTH, 855);
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -575,8 +622,8 @@ public class PreviewWidget extends Actor {
 
         Texture fboTExture = fbo.getColorBufferTexture();
         Sprite sprite  = new Sprite(fboTExture);
-        sprite.setPosition(200, 0);
-        sprite.setSize(700, 855);
+        sprite.setPosition(SELF_POS, 0);
+        sprite.setSize(PREF_WIDTH, 855);
         sprite.flip(false, true);
         sprite.draw(batch);
     }
