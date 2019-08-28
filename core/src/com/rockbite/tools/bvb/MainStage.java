@@ -272,10 +272,13 @@ public class MainStage extends Stage {
         });
     }
 
+    public void resize (int width, int height) {
+        getViewport().update(width, height, true);
+    }
+
     @Override
     public void draw () {
         previewWidget.drawFBO(getBatch(), 1f);
-
         super.draw();
     }
 
