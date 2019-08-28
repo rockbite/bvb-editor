@@ -18,6 +18,12 @@ public class BvbEditor extends ApplicationAdapter implements DropTargetListener{
 	MainStage mainStage;
 
 	@Override
+	public void resize(int width, int height) {
+		super.resize(width, height);
+		mainStage.resize(width, height);
+	}
+
+	@Override
 	public void create () {
 		mainStage = new MainStage();
 	}
