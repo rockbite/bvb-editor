@@ -432,6 +432,7 @@ public class PreviewWidget extends Actor {
         MainStage mainStage = (MainStage) getStage();
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            mainStage.showEffectListPopup(new Array<BoundEffect>());
             resetPosition();
         }
 
@@ -478,7 +479,7 @@ public class PreviewWidget extends Actor {
             currentMode = Mode.BONE_SWITCH;
             Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 20f);
             if(closestBone != null) {
-                mainStage.setHintText(closestBone.toString());
+                mainStage.setHintText("hovering bone: " + closestBone.toString());
             } else {
                 mainStage.setHintText("");
             }
@@ -541,13 +542,29 @@ public class PreviewWidget extends Actor {
 
         // check for non drag behaviour when a particle effect is being moved
         if(Gdx.input.justTouched()) {
-            lastTouchWasSelecting = false;
-            for(BoundEffect effect : getBoundEffects()) {
-                tmp.set(effect.getPosition());
-                if(mousePos.dst(tmp) < 10f) {
-                    currentlyMovingEffect = effect;
-                    selectEffect(effect);
-                    lastTouchWasSelecting = true;
+
+            if(Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
+                // right click behaviour
+                Array<BoundEffect> selectList = new Array<BoundEffect>();
+                for (BoundEffect effect : getBoundEffects()) {
+                    tmp.set(effect.getPosition());
+                    if (mousePos.dst(tmp) < 10f) {
+                        //lastTouchWasSelecting = true;
+                        selectList.add(effect);
+                    }
+                }
+                if(selectList.size > 0) {
+                    mainStage.showEffectListPopup(selectList);
+                }
+            } else {
+                lastTouchWasSelecting = false;
+                for (BoundEffect effect : getBoundEffects()) {
+                    tmp.set(effect.getPosition());
+                    if (mousePos.dst(tmp) < 10f) {
+                        currentlyMovingEffect = effect;
+                        selectEffect(effect);
+                        lastTouchWasSelecting = true;
+                    }
                 }
             }
         }
@@ -591,7 +608,7 @@ public class PreviewWidget extends Actor {
         fxProperties.setEffect(null);
     }
 
-    private void selectEffect(BoundEffect effect) {
+    public void selectEffect(BoundEffect effect) {
         currentlySelectedEffect = effect;
         fxProperties.setEffect(effect);
         sfxProperties.hide();

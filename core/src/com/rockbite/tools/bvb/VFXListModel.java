@@ -94,7 +94,8 @@ public class VFXListModel implements IFXListModel {
 
         Array<String> fixedPaths = new Array<String>();
 
-        String append = "\\Rockbite Games Team Folder\\projects\\sandship\\editor_project\\zed_project\\assets\\raws\\vfx\\particles";
+        //String append = "\\Rockbite Games Team Folder\\projects\\sandship\\editor_project\\zed_project\\assets\\raws\\vfx\\particles";
+        String append = "\\Rockbite Games Team Folder\\projects\\sandship\\RefactoredProduction\\Particles-Assets";
         for(int i = 0; i < matches.length; i++) {
             File finalDir = new File(matches[i].getAbsolutePath() + append);
             if(finalDir.exists()) {

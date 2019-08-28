@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -31,6 +32,7 @@ import com.rockbite.tools.bvb.data.VFXExportData;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 
 public class MainStage extends Stage {
@@ -61,6 +63,7 @@ public class MainStage extends Stage {
     private String projectFilePath;
     private String exportFilePath;
     private long spineLastModified;
+    private HashMap<MenuItem, BoundEffect> effPayloadMap = new HashMap<MenuItem, BoundEffect>();
 
     public MainStage() {
         super(new ScalingViewport(Scaling.stretch, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), new OrthographicCamera()),
@@ -567,15 +570,37 @@ public class MainStage extends Stage {
         if(spineJsonPath != null) {
             File file = new File(spineJsonPath);
             if (file.lastModified() > spineLastModified) {
-                reloadSpine(spineJsonPath);
+
+                troToReloadSpineJson();
+
                 spineLastModified = file.lastModified();
             }
         }
     }
 
+    public void troToReloadSpineJson() {
+        File file = new File(spineJsonPath);
+        FileHandle jsonFile = Gdx.files.absolute(spineJsonPath);
+        // but are atlas files and ping file read? if not this should be delayed to rechecl
+        FileHandle atlas = Gdx.files.absolute(file.getParent() + "/" + jsonFile.nameWithoutExtension() + ".atlas");
+        FileHandle png = Gdx.files.absolute(file.getParent() + "/" + jsonFile.nameWithoutExtension() + ".png");
+
+        if(atlas.exists() && png.exists()) {
+            reloadSpine(spineJsonPath);
+        } else {
+            Timer timer = new Timer();
+            timer.scheduleTask(new Timer.Task() {
+                @Override
+                public void run() {
+                    troToReloadSpineJson();
+                }
+            }, 1f);
+        }
+    }
+
     public void setHintText(String text) {
         leftHintLabel.setText(text);
-        leftHintLabel.setPosition(205, getHeight() - leftHintLabel.getHeight() - 35);
+        leftHintLabel.setPosition(205+150, getHeight() - leftHintLabel.getHeight() - 35);
     }
 
     private void reloadSpine(String jsonPath) {
@@ -638,6 +663,41 @@ public class MainStage extends Stage {
 
     public String getProjectPath() {
         return projectPath;
+    }
+
+    public void showEffectListPopup(Array<BoundEffect> selectList) {
+        PopupMenu menu = new PopupMenu();
+
+        //position
+        Vector2 vec = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+        (this.getViewport()).unproject(vec);
+
+        effPayloadMap.clear();
+        for(BoundEffect effect: selectList) {
+            MenuItem item = new MenuItem(effect.getName());
+            effPayloadMap.put(item, effect);
+            menu.addItem(item);
+        }
+
+
+        menu.setListener(new PopupMenu.PopupMenuListener() {
+            @Override
+            public void activeItemChanged(MenuItem newActiveItem, boolean changedByKeyboard) {
+                BoundEffect eff = effPayloadMap.get(newActiveItem);
+                if(eff != null) {
+                    previewWidget.selectEffect(eff);
+                }
+            }
+        });
+
+        menu.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                previewWidget.lastTouchWasSelecting = true;
+            }
+        });
+
+        menu.showMenu (this, vec.x, vec.y);
     }
 }
 
