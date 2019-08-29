@@ -69,8 +69,8 @@ public class PreviewWidget extends Actor {
     private float RATIO = PREF_WIDTH / PREF_HEIGHT;
     private float SELF_POS;
 
-    private float pixelPerMeter = 1;
-    private float tileSize = 128;
+    public float pixelPerMeter = 1;
+    public float tileSize = 64;
 
 
     private boolean paused = false;
@@ -93,15 +93,21 @@ public class PreviewWidget extends Actor {
 
 
     public PreviewWidget() {
-        shapeRenderer  = new ShapeRenderer();
+        shapeRenderer = new ShapeRenderer();
         renderer = new SkeletonRenderer();
         renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
 
         SELF_POS = Gdx.graphics.getWidth() - PREF_WIDTH - 20f;
         PREF_WIDTH += 20;
 
-        viewport = new ExtendViewport( PREF_WIDTH / pixelPerMeter, PREF_HEIGHT / pixelPerMeter);
+        viewport = new ExtendViewport(PREF_WIDTH / pixelPerMeter, PREF_HEIGHT / pixelPerMeter);
         fbo = new FrameBuffer(Pixmap.Format.RGB888, (int) PREF_WIDTH, (int) PREF_HEIGHT, false);
+    }
+
+    @Override
+    public void setBounds(float x, float y, float width, float height) {
+        super.setBounds(x, y, width, height);
+        System.out.println(x + " " + y);
     }
 
     private void addBoundEffect(BoundEffect effect) {
@@ -178,9 +184,9 @@ public class PreviewWidget extends Actor {
         if(((OrthographicCamera)viewport.getCamera()).zoom < 0) {
             ((OrthographicCamera)viewport.getCamera()).zoom = 0.1f;
         }
-//        if (((OrthographicCamera)viewport.getCamera()).zoom > 3) {
-//            ((OrthographicCamera) viewport.getCamera()).zoom = 3f;
-//        }
+        if (((OrthographicCamera)viewport.getCamera()).zoom > 3) {
+            ((OrthographicCamera) viewport.getCamera()).zoom = 3f;
+        }
     }
 
     public void setPixelPerMeter(float pixelPerMeter, float tileSize) {
@@ -188,6 +194,7 @@ public class PreviewWidget extends Actor {
         this.tileSize = tileSize;
         viewport.setMinWorldWidth(PREF_WIDTH / this.pixelPerMeter);
         viewport.setMinWorldHeight(PREF_HEIGHT / this.pixelPerMeter);
+        globalOffset.setZero();
         resetPosition();
         if (isSpineLoaded()) {
             ((MainStage) getStage()).troToReloadSpineJson();
@@ -206,7 +213,6 @@ public class PreviewWidget extends Actor {
     public void cleanData() {
         boundEffects.clear();
     }
-
 
     public interface ChangeListener {
         void onAnimationChanged(Skeleton skeleton);
@@ -247,7 +253,7 @@ public class PreviewWidget extends Actor {
 
         TextureAtlas atlas = new TextureAtlas(atlasFileHandle);
         SkeletonJson json = new SkeletonJson(atlas); // This loads skeleton JSON data, which is stateless.
-        json.setScale(pixelPerMeter);
+        json.setScale(1 / pixelPerMeter);
         SkeletonData skeletonData = json.readSkeletonData(jsonFileHandle);
 
         skeleton = new Skeleton(skeletonData); // Skeleton holds skeleton state (bone positions, slot attachments, etc).
@@ -292,8 +298,6 @@ public class PreviewWidget extends Actor {
                 super.event(entry, event);
             }
         });
-
-
 
         // always regenerate bone map
         boneMap.clear();
@@ -499,7 +503,7 @@ public class PreviewWidget extends Actor {
 
         if(shiftToggle) {
             currentMode = Mode.BONE_SWITCH;
-            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 0.1f);
+            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 0.1f * tileSize);
             if(closestBone != null) {
                 mainStage.setHintText("hovering bone: " + closestBone.toString());
             } else {
@@ -564,13 +568,12 @@ public class PreviewWidget extends Actor {
 
         // check for non drag behaviour when a particle effect is being moved
         if(Gdx.input.justTouched()) {
-
             if(Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
                 // right click behaviour
                 Array<BoundEffect> selectList = new Array<BoundEffect>();
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < pixelPerMeter) {
+                    if (mousePos.dst(tmp) < tileSize) {
                         //lastTouchWasSelecting = true;
                         selectList.add(effect);
                     }
@@ -582,7 +585,7 @@ public class PreviewWidget extends Actor {
                 lastTouchWasSelecting = false;
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < pixelPerMeter) {
+                    if (mousePos.dst(tmp) < tileSize) {
                         currentlyMovingEffect = effect;
                         selectEffect(effect);
                         lastTouchWasSelecting = true;
@@ -602,11 +605,11 @@ public class PreviewWidget extends Actor {
 
             if(currentlyMovingEffect != null) {
                 // no we are moving an effect
-                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * 0.025f;
+                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * tileSize * 0.01f;
                 currentlyMovingEffect.getOffset().add(currPos.scl(zoom));
             } else if( firstTouchPos.x > SELF_POS) {
                 // yeah we are panning
-                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * 0.025f;
+                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * tileSize * 0.01f;
                 globalOffset.sub(currPos.scl(zoom));
                 viewport.getCamera().position.set(globalOffset.x, globalOffset.y, 0f);
             }
@@ -619,15 +622,11 @@ public class PreviewWidget extends Actor {
         tmp.set(Gdx.input.getX()-SELF_POS, Gdx.input.getY());
         viewport.unproject(tmp);
         mousePos.set(tmp);
-
-
         mouseScreenPos.set(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
     }
 
     private void unselectEffect() {
         currentlySelectedEffect = null;
-
-
         fxProperties.setEffect(null);
     }
 
@@ -639,7 +638,7 @@ public class PreviewWidget extends Actor {
 
     public void drawFBO(Batch batch, float parentAlpha) {
         fbo.begin();
-        viewport.update((int) PREF_WIDTH, 855);
+        viewport.update((int) PREF_WIDTH, (int) PREF_HEIGHT);
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -658,88 +657,71 @@ public class PreviewWidget extends Actor {
         fbo.end();
     }
 
+    @Override
     public void draw (Batch batch, float parentAlpha) {
-
         Texture fboTExture = fbo.getColorBufferTexture();
         Sprite sprite  = new Sprite(fboTExture);
         sprite.setPosition(SELF_POS, 0);
-        sprite.setSize(PREF_WIDTH, 855);
+        sprite.setSize(PREF_WIDTH, PREF_HEIGHT);
         sprite.flip(false, true);
         sprite.draw(batch);
     }
 
     private void renderGrid(Batch batch) {
-
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
-
-        shapeRenderer.setColor(1f, 1f, 1f, 0.1f);
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
+        shapeRenderer.setColor(1f, 1f, 1f, 0.1f);
         if(isSpineFileDropActive) {
             shapeRenderer.setColor(1f, 1f, 1f, 0.1f);
-            shapeRenderer.rect(-getWidth()/2f + viewport.getCamera().position.x, -getHeight()/2f + viewport.getCamera().position.y, getWidth(), getHeight());
+            shapeRenderer.rect(-getWidth() / 2f + viewport.getCamera().position.x, -getHeight() / 2f + viewport.getCamera().position.y, getWidth(), getHeight());
         }
 
+        int lineCount = 80;
         //vertical lines
-        for (int i = 0; i * tileSize < 2 * viewport.getMinWorldWidth(); i++) {
+        for (int i = -lineCount; i < lineCount / 2; i++) {
             float alpha = 0.1f;
+            float red = 1f;
             if(i % 2 == 0) alpha = 0.2f;
-            shapeRenderer.setColor(1f, 1f, 1f, alpha);
-            shapeRenderer.rectLine(- viewport.getWorldWidth() + i * tileSize,
-                    -viewport.getWorldHeight(), - viewport.getWorldWidth() + i * tileSize,
-                    viewport.getWorldHeight(), 0.1f);
+            if (i == 0) alpha = 0.6f;
+            if (i == 1 || i == -1) {
+                red = 0f;
+                alpha = 0.5f;
+            }
+            shapeRenderer.setColor(red, 1f, 1f, alpha);
+            shapeRenderer.rectLine(i * tileSize,
+                    -4 * viewport.getWorldHeight(), i * tileSize,
+                    4 * viewport.getWorldHeight(), lineThickness(tileSize));
         }
 
         //horizontal lines
-        for (int i = 0; i * tileSize < 2 * viewport.getMinWorldWidth(); i++) {
+        for (int i = -lineCount; i < lineCount; i++) {
             float alpha = 0.1f;
+            float red = 1f;
             if(i % 2 == 0) alpha = 0.2f;
-            shapeRenderer.setColor(1f, 1f, 1f, alpha);
-            shapeRenderer.rectLine(- viewport.getWorldWidth(),
-                    - viewport.getWorldHeight()  + i * tileSize, viewport.getWorldWidth() ,
-                    - viewport.getWorldHeight() + i * tileSize, 0.1f);
+            if (i == 0) alpha = 0.6f;
+            if (i == 1 || i == -1) {
+                red = 0f;
+                alpha = 0.5f;
+            }
+            shapeRenderer.setColor(red, 1f, 1f, alpha);
+            shapeRenderer.rectLine(-4 * viewport.getWorldWidth(),
+                    i * tileSize, 4 * viewport.getWorldWidth(),
+                    i * tileSize, lineThickness(tileSize));
         }
 
-//        float lineCount = 60;
-//
-//        for(int i = 0; i < lineCount; i++) {
-//            float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
-//            int zoomInt = (int) Math.floor(zoom);
-//            if(zoomInt < 1) zoomInt = 1;
-//            //tileSize *= zoomInt;
-//
-//            float offsetX = -viewport.getCamera().position.x % tileSize + viewport.getCamera().position.x;
-//            float offsetY = -viewport.getCamera().position.y % tileSize + viewport.getCamera().position.y;
-//
-//            float lineThickness = ((OrthographicCamera)viewport.getCamera()).zoom;
-//
-//            float finalPos = (i - lineCount/2f) * tileSize;
-//
-//            float alpha = 0.1f;
-//            //if(i % 2 == 0) alpha = 0.2f;
-//            shapeRenderer.setColor(1f, 1f, 1f, alpha);
-//
-//            // horizontal lines
-//            shapeRenderer.rectLine(
-//                    -getWidth()*zoom/2f - tileSize + offsetX,
-//                    finalPos + offsetY,
-//                    getWidth()*zoom/2f + tileSize + offsetX,
-//                    finalPos + offsetY,
-//                    lineThickness);
-//
-//            // vertical lines
-//            shapeRenderer.rectLine(
-//                    finalPos + offsetX,
-//                    -getHeight()*zoom/2f - tileSize + offsetY,
-//                    finalPos + offsetX,
-//                    getHeight()*zoom/2f + tileSize + offsetY,
-//                    lineThickness);
-//        }
-
         shapeRenderer.end();
+    }
+
+
+    private float lineThickness (float tileSize) {
+        if (tileSize == 1) {
+            return 0.025f;
+        }
+        return 3f;
     }
 
     private void renderSpine(Batch batch) {
@@ -788,7 +770,7 @@ public class PreviewWidget extends Actor {
             float minDist = 100000f;
             Bone closestBone = skeleton.getRootBone();
             for (Bone bone : skeleton.getBones()) {
-                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), 0.05f, 10);
+                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), 0.05f * tileSize, 10);
                 // let's also find the closest bone and draw connection to it
                 if(currentlySelectedEffect != null) {
                     tmp.set(bone.getWorldX(), bone.getWorldY());
@@ -805,7 +787,7 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null && currentlyMovingEffect != null) {
                 // let's draw line to closest bone to current effect
                 shapeRenderer.setColor(1f, 1f, 1f, 1f);
-                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, 0.01f);
+                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, 0.01f * tileSize);
             }
         }
         if(currentMode == Mode.OFFSET) {
@@ -813,10 +795,10 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null) {
                 Bone currBone = boneMap.get(currentlySelectedEffect.getBoneName());
                 shapeRenderer.setColor(1f, 0.05f, 1f, 0.8f);
-                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), 0.01f, 10);
+                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), 0.01f * tileSize, 10);
 
                 // also let's draw a line
-                shapeRenderer.rectLine(currBone.getWorldX(), currBone.getWorldY(), currBone.getWorldX() + currentlySelectedEffect.getOffset().x, currBone.getWorldY() + currentlySelectedEffect.getOffset().y, 2f);
+                shapeRenderer.rectLine(currBone.getWorldX(), currBone.getWorldY(), currBone.getWorldX() + currentlySelectedEffect.getOffset().x, currBone.getWorldY() + currentlySelectedEffect.getOffset().y, 2f * tileSize);
             }
         }
 
@@ -826,7 +808,7 @@ public class PreviewWidget extends Actor {
             // render the particle toosl
             for (BoundEffect effect : getBoundEffects()) {
                 Bone bone = boneMap.get(effect.getBoneName());
-                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, 0.1f, 10);
+                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, 0.1f * tileSize, 10);
 
             }
         }

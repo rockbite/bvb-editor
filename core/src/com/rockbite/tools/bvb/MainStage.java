@@ -224,7 +224,7 @@ public class MainStage extends Stage {
 
         // right widget
         previewWidget = new PreviewWidget();
-        rightTable.add(previewWidget).fill().expand();
+        rightTable.add(previewWidget).fill().expand().grow();
 
         // adding the effect widget as pnael View
         effectWidget = new VFXProperties(skin);
@@ -282,6 +282,7 @@ public class MainStage extends Stage {
     }
 
     public void resize (int width, int height) {
+        previewWidget.viewport.update(width, height);
         getViewport().update(width, height, true);
     }
 
@@ -478,6 +479,10 @@ public class MainStage extends Stage {
 
         projectData.spineJsonPath = spineJsonPath;
 
+        projectData.pixelPerMeter = previewWidget.pixelPerMeter;
+
+        projectData.tileSize = previewWidget.tileSize;
+
         projectData.vfxPaths = new Array<String>();
 
         for (VFXListModel model : loadedVFX.values()) {
@@ -517,7 +522,7 @@ public class MainStage extends Stage {
             input.close();
 
 
-            FileHandle prj = Gdx.files.absolute(path);
+            final FileHandle prj = Gdx.files.absolute(path);
             projectPath = prj.parent().path();
             projectFilePath = path;
 
@@ -548,6 +553,7 @@ public class MainStage extends Stage {
                     // Now need to reload bounds
                     previewWidget.initData(projectData.exportData);
 
+                    previewWidget.setPixelPerMeter(projectData.pixelPerMeter, projectData.tileSize);
                     previewWidget.setCanvas(projectData.canvasOffsetX, projectData.canvasOffsetY);
                 }
             });

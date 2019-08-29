@@ -14,4 +14,8 @@ public class ProjectData {
     public float canvasOffsetX;
 
     public float canvasOffsetY;
+
+    public float pixelPerMeter;
+
+    public float tileSize;
 }
