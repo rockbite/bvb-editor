@@ -65,7 +65,13 @@ public class PreviewWidget extends Actor {
     float speedMultiplier = 1f;
 
     private float PREF_WIDTH = 700;
+    private float PREF_HEIGHT = 855;
+    private float RATIO = PREF_WIDTH / PREF_HEIGHT;
     private float SELF_POS;
+
+    private float pixelPerMeter = 1;
+    private float tileSize = 128;
+
 
     private boolean paused = false;
 
@@ -79,10 +85,25 @@ public class PreviewWidget extends Actor {
     private boolean touchDisabled = false;
 
     // oh here we go jeez
-    Viewport viewport;
+    ExtendViewport viewport;
     FrameBuffer fbo;
 
     private boolean shiftToggle = false;
+    private float scrollScale = 0.4f;
+
+
+    public PreviewWidget() {
+        shapeRenderer  = new ShapeRenderer();
+        renderer = new SkeletonRenderer();
+        renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
+
+        SELF_POS = Gdx.graphics.getWidth() - PREF_WIDTH - 20f;
+        PREF_WIDTH += 20;
+
+        viewport = new ExtendViewport( PREF_WIDTH / pixelPerMeter, PREF_HEIGHT / pixelPerMeter);
+        fbo = new FrameBuffer(Pixmap.Format.RGB888, (int) PREF_WIDTH, (int) PREF_HEIGHT, false);
+    }
+
     private void addBoundEffect(BoundEffect effect) {
         String animation = currentAnimation;
         if(!boundEffects.containsKey(animation)) {
@@ -153,8 +174,24 @@ public class PreviewWidget extends Actor {
 
     public void scrolled(int amount) {
         if(touchDisabled) return;
-        ((OrthographicCamera)viewport.getCamera()).zoom += amount*0.05f;
-        if(((OrthographicCamera)viewport.getCamera()).zoom < 0) ((OrthographicCamera)viewport.getCamera()).zoom = 0.1f;
+        ((OrthographicCamera)viewport.getCamera()).zoom += amount * scrollScale;
+        if(((OrthographicCamera)viewport.getCamera()).zoom < 0) {
+            ((OrthographicCamera)viewport.getCamera()).zoom = 0.1f;
+        }
+//        if (((OrthographicCamera)viewport.getCamera()).zoom > 3) {
+//            ((OrthographicCamera) viewport.getCamera()).zoom = 3f;
+//        }
+    }
+
+    public void setPixelPerMeter(float pixelPerMeter, float tileSize) {
+        this.pixelPerMeter = pixelPerMeter;
+        this.tileSize = tileSize;
+        viewport.setMinWorldWidth(PREF_WIDTH / this.pixelPerMeter);
+        viewport.setMinWorldHeight(PREF_HEIGHT / this.pixelPerMeter);
+        resetPosition();
+        if (isSpineLoaded()) {
+            ((MainStage) getStage()).troToReloadSpineJson();
+        }
     }
 
     public void resetPosition() {
@@ -163,7 +200,7 @@ public class PreviewWidget extends Actor {
     }
 
     public void setSpeed(float value) {
-        speedMultiplier = value/100f;
+        speedMultiplier = value / 100f;
     }
 
     public void cleanData() {
@@ -183,20 +220,6 @@ public class PreviewWidget extends Actor {
         PREVIEW,
         OFFSET,
         BONE_SWITCH
-    }
-
-    public PreviewWidget() {
-        shapeRenderer  = new ShapeRenderer();
-        renderer = new SkeletonRenderer();
-        renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
-
-        setSize(PREF_WIDTH, 855);
-
-        SELF_POS = Gdx.graphics.getWidth() - PREF_WIDTH - 20f;
-        PREF_WIDTH += 20;
-
-        viewport = new FitViewport(PREF_WIDTH, 855);
-        fbo = new FrameBuffer(Pixmap.Format.RGB888, (int) PREF_WIDTH, 855, false);
     }
 
     public boolean initSpine(String animPath, String planBPath) {
@@ -224,7 +247,7 @@ public class PreviewWidget extends Actor {
 
         TextureAtlas atlas = new TextureAtlas(atlasFileHandle);
         SkeletonJson json = new SkeletonJson(atlas); // This loads skeleton JSON data, which is stateless.
-        json.setScale(0.3968f);
+        json.setScale(pixelPerMeter);
         SkeletonData skeletonData = json.readSkeletonData(jsonFileHandle);
 
         skeleton = new Skeleton(skeletonData); // Skeleton holds skeleton state (bone positions, slot attachments, etc).
@@ -344,7 +367,6 @@ public class PreviewWidget extends Actor {
 
         BoundEffect effect = new BoundEffect();
         effect.load(model.path);
-        effect.setScale(50f);
         effect.getEffect().start();
 
 
@@ -477,7 +499,7 @@ public class PreviewWidget extends Actor {
 
         if(shiftToggle) {
             currentMode = Mode.BONE_SWITCH;
-            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 20f);
+            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 0.1f);
             if(closestBone != null) {
                 mainStage.setHintText("hovering bone: " + closestBone.toString());
             } else {
@@ -548,7 +570,7 @@ public class PreviewWidget extends Actor {
                 Array<BoundEffect> selectList = new Array<BoundEffect>();
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < 10f) {
+                    if (mousePos.dst(tmp) < pixelPerMeter) {
                         //lastTouchWasSelecting = true;
                         selectList.add(effect);
                     }
@@ -560,7 +582,7 @@ public class PreviewWidget extends Actor {
                 lastTouchWasSelecting = false;
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < 10f) {
+                    if (mousePos.dst(tmp) < pixelPerMeter) {
                         currentlyMovingEffect = effect;
                         selectEffect(effect);
                         lastTouchWasSelecting = true;
@@ -580,10 +602,11 @@ public class PreviewWidget extends Actor {
 
             if(currentlyMovingEffect != null) {
                 // no we are moving an effect
-                currentlyMovingEffect.getOffset().add(currPos);
+                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * 0.025f;
+                currentlyMovingEffect.getOffset().add(currPos.scl(zoom));
             } else if( firstTouchPos.x > SELF_POS) {
                 // yeah we are panning
-                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
+                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * 0.025f;
                 globalOffset.sub(currPos.scl(zoom));
                 viewport.getCamera().position.set(globalOffset.x, globalOffset.y, 0f);
             }
@@ -660,44 +683,61 @@ public class PreviewWidget extends Actor {
             shapeRenderer.rect(-getWidth()/2f + viewport.getCamera().position.x, -getHeight()/2f + viewport.getCamera().position.y, getWidth(), getHeight());
         }
 
-        float lineCount = 40;
-
-        for(int i = 0; i < lineCount; i++) {
-
-
-            float tileSize = 50f;
-            float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
-            int zoomInt = (int) Math.floor(zoom);
-            if(zoomInt < 1) zoomInt = 1;
-            tileSize *= zoomInt;
-
-            float offsetX = -viewport.getCamera().position.x % tileSize + viewport.getCamera().position.x;
-            float offsetY = -viewport.getCamera().position.y % tileSize + viewport.getCamera().position.y;
-
-            float lineThickness = 1f * ((OrthographicCamera)viewport.getCamera()).zoom;
-
-            float finalPos = (i - lineCount/2f) * tileSize;
-
+        //vertical lines
+        for (int i = 0; i * tileSize < 2 * viewport.getMinWorldWidth(); i++) {
             float alpha = 0.1f;
             if(i % 2 == 0) alpha = 0.2f;
             shapeRenderer.setColor(1f, 1f, 1f, alpha);
-
-            // horizontal lines
-            shapeRenderer.rectLine(
-                    -getWidth()*zoom/2f - tileSize + offsetX,
-                    finalPos + offsetY,
-                    getWidth()*zoom/2f + tileSize + offsetX,
-                    finalPos + offsetY,
-                    lineThickness);
-
-            // vertical lines
-            shapeRenderer.rectLine(
-                    finalPos + offsetX,
-                    -getHeight()*zoom/2f - tileSize + offsetY,
-                    finalPos + offsetX,
-                    getHeight()*zoom/2f + tileSize + offsetY,
-                    lineThickness);
+            shapeRenderer.rectLine(- viewport.getWorldWidth() + i * tileSize,
+                    -viewport.getWorldHeight(), - viewport.getWorldWidth() + i * tileSize,
+                    viewport.getWorldHeight(), 0.1f);
         }
+
+        //horizontal lines
+        for (int i = 0; i * tileSize < 2 * viewport.getMinWorldWidth(); i++) {
+            float alpha = 0.1f;
+            if(i % 2 == 0) alpha = 0.2f;
+            shapeRenderer.setColor(1f, 1f, 1f, alpha);
+            shapeRenderer.rectLine(- viewport.getWorldWidth(),
+                    - viewport.getWorldHeight()  + i * tileSize, viewport.getWorldWidth() ,
+                    - viewport.getWorldHeight() + i * tileSize, 0.1f);
+        }
+
+//        float lineCount = 60;
+//
+//        for(int i = 0; i < lineCount; i++) {
+//            float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
+//            int zoomInt = (int) Math.floor(zoom);
+//            if(zoomInt < 1) zoomInt = 1;
+//            //tileSize *= zoomInt;
+//
+//            float offsetX = -viewport.getCamera().position.x % tileSize + viewport.getCamera().position.x;
+//            float offsetY = -viewport.getCamera().position.y % tileSize + viewport.getCamera().position.y;
+//
+//            float lineThickness = ((OrthographicCamera)viewport.getCamera()).zoom;
+//
+//            float finalPos = (i - lineCount/2f) * tileSize;
+//
+//            float alpha = 0.1f;
+//            //if(i % 2 == 0) alpha = 0.2f;
+//            shapeRenderer.setColor(1f, 1f, 1f, alpha);
+//
+//            // horizontal lines
+//            shapeRenderer.rectLine(
+//                    -getWidth()*zoom/2f - tileSize + offsetX,
+//                    finalPos + offsetY,
+//                    getWidth()*zoom/2f + tileSize + offsetX,
+//                    finalPos + offsetY,
+//                    lineThickness);
+//
+//            // vertical lines
+//            shapeRenderer.rectLine(
+//                    finalPos + offsetX,
+//                    -getHeight()*zoom/2f - tileSize + offsetY,
+//                    finalPos + offsetX,
+//                    getHeight()*zoom/2f + tileSize + offsetY,
+//                    lineThickness);
+//        }
 
         shapeRenderer.end();
     }
@@ -748,7 +788,7 @@ public class PreviewWidget extends Actor {
             float minDist = 100000f;
             Bone closestBone = skeleton.getRootBone();
             for (Bone bone : skeleton.getBones()) {
-                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), 3, 10);
+                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), 0.05f, 10);
                 // let's also find the closest bone and draw connection to it
                 if(currentlySelectedEffect != null) {
                     tmp.set(bone.getWorldX(), bone.getWorldY());
@@ -765,7 +805,7 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null && currentlyMovingEffect != null) {
                 // let's draw line to closest bone to current effect
                 shapeRenderer.setColor(1f, 1f, 1f, 1f);
-                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, 2f);
+                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, 0.01f);
             }
         }
         if(currentMode == Mode.OFFSET) {
@@ -773,7 +813,7 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null) {
                 Bone currBone = boneMap.get(currentlySelectedEffect.getBoneName());
                 shapeRenderer.setColor(1f, 0.05f, 1f, 0.8f);
-                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), 3, 10);
+                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), 0.01f, 10);
 
                 // also let's draw a line
                 shapeRenderer.rectLine(currBone.getWorldX(), currBone.getWorldY(), currBone.getWorldX() + currentlySelectedEffect.getOffset().x, currBone.getWorldY() + currentlySelectedEffect.getOffset().y, 2f);
@@ -786,7 +826,7 @@ public class PreviewWidget extends Actor {
             // render the particle toosl
             for (BoundEffect effect : getBoundEffects()) {
                 Bone bone = boneMap.get(effect.getBoneName());
-                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, 6, 10);
+                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, 0.1f, 10);
 
             }
         }
@@ -819,10 +859,6 @@ public class PreviewWidget extends Actor {
                 vfx.endEvent = be.getEndEvent();
                 vfx.isBehind = be.isBehind;
                 vfx.scale = be.scale;
-
-                vfx.offset.x /= 50f;
-                vfx.offset.x /= 50f;
-
                 exportData.boundVFXList.get(animName).add(vfx);
             }
         }

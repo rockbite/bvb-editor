@@ -32,7 +32,6 @@ import com.rockbite.tools.bvb.data.VFXExportData;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.Hashtable;
 
 
 public class MainStage extends Stage {
@@ -152,6 +151,14 @@ public class MainStage extends Stage {
                     previewWidget.deleteSelectedVFX();
                 }
 
+                if(text.equals("Set tile 1 (UI)")) {
+                    previewWidget.setPixelPerMeter(1, 64);
+                }
+
+                if(text.equals("Set tile 1 / 128 (Game)")) {
+                    previewWidget.setPixelPerMeter(128f, 1);
+                }
+
                 if(text.equals("Camera Reset")) {
                     previewWidget.resetPosition();
                 }
@@ -181,6 +188,8 @@ public class MainStage extends Stage {
 
         Menu viewMenu = new Menu("View");
         viewMenu.addItem(new MenuItem("Camera Reset", menuListener).setShortcut(Input.Keys.ENTER));
+        viewMenu.addItem(new MenuItem("Set tile 1 (UI)", menuListener));
+        viewMenu.addItem(new MenuItem("Set tile 1 / 128 (Game)", menuListener));
         menuBar.addMenu(viewMenu);
 
         final Menu animationMenu = new Menu("Animation");
