@@ -32,7 +32,6 @@ import com.rockbite.tools.bvb.data.VFXExportData;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.Hashtable;
 
 
 public class MainStage extends Stage {
@@ -152,6 +151,14 @@ public class MainStage extends Stage {
                     previewWidget.deleteSelectedVFX();
                 }
 
+                if(text.equals("Set tile 1 (UI)")) {
+                    previewWidget.setPixelPerMeter(1, 64);
+                }
+
+                if(text.equals("Set tile 1 / 128 (Game)")) {
+                    previewWidget.setPixelPerMeter(128f, 1);
+                }
+
                 if(text.equals("Camera Reset")) {
                     previewWidget.resetPosition();
                 }
@@ -181,6 +188,8 @@ public class MainStage extends Stage {
 
         Menu viewMenu = new Menu("View");
         viewMenu.addItem(new MenuItem("Camera Reset", menuListener).setShortcut(Input.Keys.ENTER));
+        viewMenu.addItem(new MenuItem("Set tile 1 (UI)", menuListener));
+        viewMenu.addItem(new MenuItem("Set tile 1 / 128 (Game)", menuListener));
         menuBar.addMenu(viewMenu);
 
         final Menu animationMenu = new Menu("Animation");
@@ -215,7 +224,7 @@ public class MainStage extends Stage {
 
         // right widget
         previewWidget = new PreviewWidget();
-        rightTable.add(previewWidget).fill().expand();
+        rightTable.add(previewWidget).fill().expand().grow();
 
         // adding the effect widget as pnael View
         effectWidget = new VFXProperties(skin);
@@ -273,6 +282,7 @@ public class MainStage extends Stage {
     }
 
     public void resize (int width, int height) {
+        previewWidget.viewport.update(width, height);
         getViewport().update(width, height, true);
     }
 
@@ -469,6 +479,10 @@ public class MainStage extends Stage {
 
         projectData.spineJsonPath = spineJsonPath;
 
+        projectData.pixelPerMeter = previewWidget.pixelPerMeter;
+
+        projectData.tileSize = previewWidget.tileSize;
+
         projectData.vfxPaths = new Array<String>();
 
         for (VFXListModel model : loadedVFX.values()) {
@@ -508,7 +522,7 @@ public class MainStage extends Stage {
             input.close();
 
 
-            FileHandle prj = Gdx.files.absolute(path);
+            final FileHandle prj = Gdx.files.absolute(path);
             projectPath = prj.parent().path();
             projectFilePath = path;
 
@@ -539,6 +553,7 @@ public class MainStage extends Stage {
                     // Now need to reload bounds
                     previewWidget.initData(projectData.exportData);
 
+                    previewWidget.setPixelPerMeter(projectData.pixelPerMeter, projectData.tileSize);
                     previewWidget.setCanvas(projectData.canvasOffsetX, projectData.canvasOffsetY);
                 }
             });
