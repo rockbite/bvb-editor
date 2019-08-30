@@ -677,8 +677,10 @@ public class PreviewWidget extends Actor {
         shapeRenderer.setColor(1f, 1f, 1f, 0.1f);
         if(isSpineFileDropActive) {
             shapeRenderer.setColor(1f, 1f, 1f, 0.1f);
-            shapeRenderer.rect(-getWidth() / 2f + viewport.getCamera().position.x, -getHeight() / 2f + viewport.getCamera().position.y, getWidth(), getHeight());
+           // shapeRenderer.rect(-getWidth() / 2f + viewport.getCamera().position.x, -getHeight() / 2f + viewport.getCamera().position.y, getWidth(), getHeight());
         }
+
+        float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
 
         int lineCount = 80;
         //vertical lines
@@ -694,7 +696,7 @@ public class PreviewWidget extends Actor {
             shapeRenderer.setColor(red, 1f, 1f, alpha);
             shapeRenderer.rectLine(i * tileSize,
                     -4 * viewport.getWorldHeight(), i * tileSize,
-                    4 * viewport.getWorldHeight(), lineThickness(tileSize));
+                    4 * viewport.getWorldHeight(), lineThickness(tileSize, zoom));
         }
 
         //horizontal lines
@@ -710,18 +712,26 @@ public class PreviewWidget extends Actor {
             shapeRenderer.setColor(red, 1f, 1f, alpha);
             shapeRenderer.rectLine(-4 * viewport.getWorldWidth(),
                     i * tileSize, 4 * viewport.getWorldWidth(),
-                    i * tileSize, lineThickness(tileSize));
+                    i * tileSize, lineThickness(tileSize, zoom));
         }
 
         shapeRenderer.end();
     }
 
 
-    private float lineThickness (float tileSize) {
+    private float lineThickness (float tileSize, float zoom) {
+        float thickness = 3f;
+
+
         if (tileSize == 1) {
-            return 0.025f;
+            thickness = 0.025f;
         }
-        return 3f;
+
+        thickness *= 0.5f;
+
+        thickness *= zoom;
+
+        return thickness;
     }
 
     private void renderSpine(Batch batch) {
