@@ -69,8 +69,8 @@ public class PreviewWidget extends Actor {
     private float RATIO = PREF_WIDTH / PREF_HEIGHT;
     private float SELF_POS;
 
-    public float pixelPerMeter = 1;
-    public float tileSize = 64;
+    public float pixelPerMeter = 128f;
+    public float tileSize = 1f;
 
 
     private boolean paused = false;
@@ -457,6 +457,12 @@ public class PreviewWidget extends Actor {
     private void detectInputs() {
         MainStage mainStage = (MainStage) getStage();
 
+        float mpp = 1f/pixelPerMeter; // meter per pixel
+        float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
+        float lineThickness = mpp * zoom * 2f;
+        float dotRadius = mpp * zoom * 5f *2f;
+        float redDot = dotRadius/2f;
+
         if(Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             mainStage.showEffectListPopup(new Array<BoundEffect>());
             resetPosition();
@@ -503,7 +509,7 @@ public class PreviewWidget extends Actor {
 
         if(shiftToggle) {
             currentMode = Mode.BONE_SWITCH;
-            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, 0.1f * tileSize);
+            Bone closestBone = getClosestBone(mousePos.x, mousePos.y, dotRadius);
             if(closestBone != null) {
                 mainStage.setHintText("hovering bone: " + closestBone.toString());
             } else {
@@ -573,7 +579,7 @@ public class PreviewWidget extends Actor {
                 Array<BoundEffect> selectList = new Array<BoundEffect>();
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < tileSize) {
+                    if (mousePos.dst(tmp) < dotRadius*1.3f) {
                         //lastTouchWasSelecting = true;
                         selectList.add(effect);
                     }
@@ -585,7 +591,7 @@ public class PreviewWidget extends Actor {
                 lastTouchWasSelecting = false;
                 for (BoundEffect effect : getBoundEffects()) {
                     tmp.set(effect.getPosition());
-                    if (mousePos.dst(tmp) < tileSize) {
+                    if (mousePos.dst(tmp) < dotRadius*1.3f) {
                         currentlyMovingEffect = effect;
                         selectEffect(effect);
                         lastTouchWasSelecting = true;
@@ -605,12 +611,12 @@ public class PreviewWidget extends Actor {
 
             if(currentlyMovingEffect != null) {
                 // no we are moving an effect
-                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * tileSize * 0.01f;
-                currentlyMovingEffect.getOffset().add(currPos.scl(zoom));
+                currentlyMovingEffect.getOffset().add(currPos.scl(zoom * mpp));
+
             } else if( firstTouchPos.x > SELF_POS) {
                 // yeah we are panning
-                float zoom = ((OrthographicCamera)viewport.getCamera()).zoom * tileSize * 0.01f;
-                globalOffset.sub(currPos.scl(zoom));
+                globalOffset.sub(currPos.scl(zoom * mpp));
+
                 viewport.getCamera().position.set(globalOffset.x, globalOffset.y, 0f);
             }
         }
@@ -684,16 +690,22 @@ public class PreviewWidget extends Actor {
 
         int lineCount = 80;
         //vertical lines
-        for (int i = -lineCount; i < lineCount / 2; i++) {
+        for (int i = -lineCount; i < lineCount; i++) {
             float alpha = 0.1f;
-            float red = 1f;
+            //float red = 1f;
             if(i % 2 == 0) alpha = 0.2f;
-            if (i == 0) alpha = 0.6f;
-            if (i == 1 || i == -1) {
+            if (i == 0) alpha = 0.4f;
+
+           /* if (i == 1 || i == -1) {
                 red = 0f;
                 alpha = 0.5f;
+            }*/
+            if(zoom > 2f) {
+                float k = (3f - zoom)/(1f/0.3f)+0.3f;
+                alpha *= k;
             }
-            shapeRenderer.setColor(red, 1f, 1f, alpha);
+
+            shapeRenderer.setColor(1f, 1f, 1f, alpha);
             shapeRenderer.rectLine(i * tileSize,
                     -4 * viewport.getWorldHeight(), i * tileSize,
                     4 * viewport.getWorldHeight(), lineThickness(tileSize, zoom));
@@ -702,14 +714,20 @@ public class PreviewWidget extends Actor {
         //horizontal lines
         for (int i = -lineCount; i < lineCount; i++) {
             float alpha = 0.1f;
-            float red = 1f;
+            //float red = 1f;
             if(i % 2 == 0) alpha = 0.2f;
-            if (i == 0) alpha = 0.6f;
-            if (i == 1 || i == -1) {
+            if (i == 0) alpha = 0.4f;
+            /*if (i == 1 || i == -1) {
                 red = 0f;
                 alpha = 0.5f;
+            }*/
+
+            if(zoom > 2f) {
+                float k = (3f - zoom)/(1f/0.3f)+0.3f;
+                alpha *= k;
             }
-            shapeRenderer.setColor(red, 1f, 1f, alpha);
+
+            shapeRenderer.setColor(1f, 1f, 1f, alpha);
             shapeRenderer.rectLine(-4 * viewport.getWorldWidth(),
                     i * tileSize, 4 * viewport.getWorldWidth(),
                     i * tileSize, lineThickness(tileSize, zoom));
@@ -776,11 +794,17 @@ public class PreviewWidget extends Actor {
 
         shapeRenderer.setColor(1f, 0.05f, 0.05f, 0.4f);
 
+        float mpp = 1f/pixelPerMeter; // meter per pixel
+        float zoom = ((OrthographicCamera)viewport.getCamera()).zoom;
+        float lineThickness = mpp * zoom * 2f;
+        float dotRadius = mpp * zoom * 5f *2f;
+        float redDot = dotRadius/2f;
+
         if(currentMode == Mode.BONE_SWITCH) {
             float minDist = 100000f;
             Bone closestBone = skeleton.getRootBone();
             for (Bone bone : skeleton.getBones()) {
-                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), 0.05f * tileSize, 10);
+                shapeRenderer.circle(bone.getWorldX(), bone.getWorldY(), redDot, 10);
                 // let's also find the closest bone and draw connection to it
                 if(currentlySelectedEffect != null) {
                     tmp.set(bone.getWorldX(), bone.getWorldY());
@@ -797,7 +821,7 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null && currentlyMovingEffect != null) {
                 // let's draw line to closest bone to current effect
                 shapeRenderer.setColor(1f, 1f, 1f, 1f);
-                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, 0.01f * tileSize);
+                shapeRenderer.rectLine(closestBone.getWorldX(), closestBone.getWorldY(), currentlySelectedEffect.getPosition().x, currentlySelectedEffect.getPosition().y, lineThickness);
             }
         }
         if(currentMode == Mode.OFFSET) {
@@ -805,10 +829,10 @@ public class PreviewWidget extends Actor {
             if(currentlySelectedEffect != null) {
                 Bone currBone = boneMap.get(currentlySelectedEffect.getBoneName());
                 shapeRenderer.setColor(1f, 0.05f, 1f, 0.8f);
-                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), 0.01f * tileSize, 10);
+                shapeRenderer.circle(currBone.getWorldX(), currBone.getWorldY(), dotRadius, 10);
 
                 // also let's draw a line
-                shapeRenderer.rectLine(currBone.getWorldX(), currBone.getWorldY(), currBone.getWorldX() + currentlySelectedEffect.getOffset().x, currBone.getWorldY() + currentlySelectedEffect.getOffset().y, 2f * tileSize);
+                shapeRenderer.rectLine(currBone.getWorldX(), currBone.getWorldY(), currBone.getWorldX() + currentlySelectedEffect.getOffset().x, currBone.getWorldY() + currentlySelectedEffect.getOffset().y, lineThickness);
             }
         }
 
@@ -818,7 +842,7 @@ public class PreviewWidget extends Actor {
             // render the particle toosl
             for (BoundEffect effect : getBoundEffects()) {
                 Bone bone = boneMap.get(effect.getBoneName());
-                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, 0.1f * tileSize, 10);
+                shapeRenderer.circle(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y, dotRadius, 10);
 
             }
         }

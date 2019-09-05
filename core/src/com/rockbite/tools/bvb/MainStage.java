@@ -167,7 +167,7 @@ public class MainStage extends Stage {
                     Dialogs.showOKDialog (MainStage.this, "Help", " Drag & Drop .json to the right and .p files to the left panels \n to load Spine and VFX effects. \n\n Hold Shift for Bone Binding Mode \n Hold Alt for bone Offset Mode \n\n ");
                 }
                 if(text.equals("About")) {
-                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.4", "This is new about text. yes it changed.");
+                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.5", "Fire Vahe 4 times, and one Ave Maria. thanks.");
                 }
             }
         };
