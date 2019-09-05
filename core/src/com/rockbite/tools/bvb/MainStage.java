@@ -167,7 +167,13 @@ public class MainStage extends Stage {
                     Dialogs.showOKDialog (MainStage.this, "Help", " Drag & Drop .json to the right and .p files to the left panels \n to load Spine and VFX effects. \n\n Hold Shift for Bone Binding Mode \n Hold Alt for bone Offset Mode \n\n ");
                 }
                 if(text.equals("About")) {
-                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.5", "Fire Vahe 4 times, and one Ave Maria. thanks.");
+                    Dialogs.showOKDialog (MainStage.this, "About BVB Editor V 1.1.6", "Premultiplied Alpha support added");
+                }
+                if(text.equals("Premultiplied Alpha - ON")) {
+                    previewWidget.renderer.setPremultipliedAlpha(true);
+                }
+                if(text.equals("Premultiplied Alpha - OFF")) {
+                    previewWidget.renderer.setPremultipliedAlpha(false);
                 }
             }
         };
@@ -201,6 +207,9 @@ public class MainStage extends Stage {
         animationMenu.addItem(new MenuItem("Play", menuListener).setShortcut(Input.Keys.SPACE));
         animationMenu.addItem(new MenuItem("Pause", menuListener).setShortcut(Input.Keys.SPACE));
         animationMenu.addItem(new MenuItem("Delete Selected VFX", menuListener).setShortcut(Input.Keys.FORWARD_DEL));
+        animationMenu.addSeparator();
+        animationMenu.addItem(new MenuItem("Premultiplied Alpha - ON", menuListener));
+        animationMenu.addItem(new MenuItem("Premultiplied Alpha - OFF", menuListener));
         menuBar.addMenu(animationMenu);
 
         Menu helpMenu = new Menu("Help");
