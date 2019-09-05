@@ -649,6 +649,7 @@ public class PreviewWidget extends Actor {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+
         renderGrid(batch);
         if(skeleton != null) {
             batch.getProjectionMatrix().set(viewport.getCamera().combined);
@@ -763,7 +764,15 @@ public class PreviewWidget extends Actor {
         skeleton.setPosition(0, 0);
         skeleton.updateWorldTransform(); // Uses the bones' local SRT to compute their world SRT.
 
+
+        int a1 = batch.getBlendSrcFunc();
+        int a2 = batch.getBlendDstFunc();
+        int a3 = batch.getBlendSrcFuncAlpha();
+        int a4 = batch.getBlendDstFuncAlpha();
         renderer.draw(batch, skeleton); // Draw the skeleton images.
+
+        // fixing back the blending because PMA is shit
+        batch.setBlendFunctionSeparate(a1, a2, a3, a4);
     }
 
     private void renderBackVFX(Batch batch) {
