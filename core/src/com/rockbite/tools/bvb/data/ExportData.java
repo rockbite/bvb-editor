@@ -10,12 +10,7 @@ import java.util.Map;
 
 public class ExportData {
 
-
-    //this is for supporting old version
-    @Deprecated
-    private HashMap<String, Array<VFXExportData>> boundVFXList = new HashMap<String, Array<VFXExportData>>();
-
-    public HashMap<String, HashMap<String, Array<VFXExportData>>> newBoundVFXList = new HashMap<String, HashMap<String, Array<VFXExportData>>>();
+    public HashMap<String, HashMap<String, Array<VFXExportData>>> boundVFXList = new HashMap<String, HashMap<String, Array<VFXExportData>>>();
 
     public Array<SFXExportData> sfxExportData = new Array<SFXExportData>();
 
@@ -27,7 +22,7 @@ public class ExportData {
             xml.element("bindings");
             xml.element("vfx");
 
-            for (Map.Entry<String,HashMap<String, Array<VFXExportData>>> entry : newBoundVFXList.entrySet()) {
+            for (Map.Entry<String,HashMap<String, Array<VFXExportData>>> entry : boundVFXList.entrySet()) {
                 String skinName = entry.getKey();
                 HashMap<String, Array<VFXExportData>> animations = entry.getValue();
                 for (Map.Entry<String, Array<VFXExportData>> animationData : animations.entrySet()) {

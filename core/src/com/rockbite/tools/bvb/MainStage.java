@@ -563,41 +563,33 @@ public class MainStage extends Stage {
 
             Gdx.app.postRunnable(new Runnable() {
                 @Override
-                public void run() {
+                public void run () {
                     // now let's use this project data
+                    spineJsonPath = projectData.spineJsonPath;
 
-                    try {
-                        spineJsonPath = projectData.spineJsonPath;
+                    previewWidget.cleanData();
+                    previewWidget.initSpine(spineJsonPath, path);
 
-                        previewWidget.cleanData();
-                        previewWidget.initSpine(spineJsonPath, path);
+                    File jsonFile = new File(spineJsonPath);
+                    spineLastModified = jsonFile.lastModified();
 
-                        File jsonFile = new File(spineJsonPath);
-                        spineLastModified = jsonFile.lastModified();
+                    // now load VFX list
+                    fxListAdapter.clear();
+                    loadedVFX.clear();
+                    for (String vfxPath : projectData.vfxPaths) {
+                        VFXListModel model = new VFXListModel(MainStage.this, vfxPath);
+                        if (loadedVFX.get(model.toString()) != null) return;
+                        if (!model.exists) return;
 
-                        // now load VFX list
-                        fxListAdapter.clear();
-                        loadedVFX.clear();
-                        for (String vfxPath : projectData.vfxPaths) {
-                            VFXListModel model = new VFXListModel(MainStage.this, vfxPath);
-                            if (loadedVFX.get(model.toString()) != null) return;
-                            if (!model.exists) return;
-
-                            fxListAdapter.add(model);
-                            loadedVFX.put(model.toString(), model);
-                        }
-
-                        // Now need to reload bounds
-                        previewWidget.initData(projectData.exportData);
-
-                        previewWidget.setPixelPerMeter(projectData.pixelPerMeter, projectData.tileSize);
-                        previewWidget.setCanvas(projectData.canvasOffsetX, projectData.canvasOffsetY);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        previewWidget.cleanData();
-                        previewWidget.skeleton = null;
-                        Dialogs.showErrorDialog (MainStage.this, "E de HARAM lini, update ara bvb file y elevator cragrov.");
+                        fxListAdapter.add(model);
+                        loadedVFX.put(model.toString(), model);
                     }
+
+                    // Now need to reload bounds
+                    previewWidget.initData(projectData.exportData);
+
+                    previewWidget.setPixelPerMeter(projectData.pixelPerMeter, projectData.tileSize);
+                    previewWidget.setCanvas(projectData.canvasOffsetX, projectData.canvasOffsetY);
                 }
             });
 

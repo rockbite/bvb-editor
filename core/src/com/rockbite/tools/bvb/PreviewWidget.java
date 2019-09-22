@@ -920,8 +920,8 @@ public class PreviewWidget extends Actor {
         for (Map.Entry<String, HashMap<String, Array<BoundEffect>>> entry : boundEffects.entrySet()) {
             String skinName = entry.getKey();
 
-            if(!exportData.newBoundVFXList.containsKey(skinName)) {
-                exportData.newBoundVFXList.put(skinName, new HashMap<String, Array<VFXExportData>>());
+            if(!exportData.boundVFXList.containsKey(skinName)) {
+                exportData.boundVFXList.put(skinName, new HashMap<String, Array<VFXExportData>>());
             }
 
             HashMap<String, Array<BoundEffect>> animationMap = entry.getValue();
@@ -929,7 +929,7 @@ public class PreviewWidget extends Actor {
                 String animName = animationEntry.getKey();
                 Array<BoundEffect> value = animationEntry.getValue();
 
-                HashMap<String, Array<VFXExportData>> animationExportMap = exportData.newBoundVFXList.get(skinName);
+                HashMap<String, Array<VFXExportData>> animationExportMap = exportData.boundVFXList.get(skinName);
                 if(!animationExportMap.containsKey(animName)) {
                     animationExportMap.put(animName, new Array<VFXExportData>());
                 }
@@ -966,7 +966,7 @@ public class PreviewWidget extends Actor {
 
         MainStage mainStage = (MainStage) getStage();
 
-        for (Map.Entry<String, HashMap<String, Array<VFXExportData>>> entry : exportData.newBoundVFXList.entrySet()) {
+        for (Map.Entry<String, HashMap<String, Array<VFXExportData>>> entry : exportData.boundVFXList.entrySet()) {
             String skinName = entry.getKey();
 
             if(!boundEffects.containsKey(skinName)) {
