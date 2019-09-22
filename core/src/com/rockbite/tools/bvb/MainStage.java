@@ -40,6 +40,7 @@ public class MainStage extends Stage {
 
     PreviewWidget previewWidget;
     PopupMenu animationsListMenu;
+    PopupMenu skinsListMenu;
     Table leftTable;
     TextureAtlas atlas;
     Table rightTable;
@@ -206,14 +207,22 @@ public class MainStage extends Stage {
         animationsListMenu = new PopupMenu();
         animations.setSubMenu(animationsListMenu);
         animationMenu.addItem(animations);
-        animationMenu.addSeparator();
-        animationMenu.addItem(new MenuItem("Play", menuListener).setShortcut(Input.Keys.SPACE));
+        MenuItem skins = new MenuItem("Skins");
+		skinsListMenu = new PopupMenu();
+		skins.setSubMenu(skinsListMenu);
+		animationMenu.addItem(skins);
+		animationMenu.addSeparator();
+		animationMenu.addItem(new MenuItem("Play", menuListener).setShortcut(Input.Keys.SPACE));
         animationMenu.addItem(new MenuItem("Pause", menuListener).setShortcut(Input.Keys.SPACE));
         animationMenu.addItem(new MenuItem("Delete Selected VFX", menuListener).setShortcut(Input.Keys.FORWARD_DEL));
         animationMenu.addSeparator();
         animationMenu.addItem(new MenuItem("Premultiplied Alpha - ON", menuListener));
         animationMenu.addItem(new MenuItem("Premultiplied Alpha - OFF", menuListener));
         menuBar.addMenu(animationMenu);
+
+
+
+
 
         Menu helpMenu = new Menu("Help");
         helpMenu.addItem(new MenuItem("Help", menuListener));
@@ -280,6 +289,16 @@ public class MainStage extends Stage {
                         }
                     }));
                 }
+
+                skinsListMenu.clear();
+				for (final com.esotericsoftware.spine.Skin skin : skeleton.getData().getSkins()) {
+					skinsListMenu.addItem(new MenuItem(skin.getName(), new ChangeListener() {
+						@Override
+						public void changed (ChangeEvent event, Actor actor) {
+							previewWidget.changeSkin(skin);
+						}
+					}));
+				}
             }
         });
 

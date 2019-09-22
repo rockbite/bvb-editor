@@ -24,6 +24,7 @@ import com.rockbite.tools.bvb.data.VFXExportData;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 
 public class PreviewWidget extends Actor {
@@ -36,7 +37,7 @@ public class PreviewWidget extends Actor {
 
     Array<String> eventList = new Array<String>();
 
-    HashMap<String, Array<BoundEffect>> boundEffects = new HashMap<String, Array<BoundEffect>>();
+    HashMap<String, HashMap<String, Array<BoundEffect>>> boundEffects = new HashMap<String, HashMap<String, Array<BoundEffect>>>();
 
     HashMap<String, Bone> boneMap = new HashMap<String, Bone>();
 
@@ -60,7 +61,8 @@ public class PreviewWidget extends Actor {
 
     Mode currentMode = Mode.PREVIEW;
 
-    String currentAnimation;
+    private String currentAnimation;
+    private String currentSkin;
 
     float speedMultiplier = 1f;
 
@@ -112,19 +114,28 @@ public class PreviewWidget extends Actor {
 
     private void addBoundEffect(BoundEffect effect) {
         String animation = currentAnimation;
-        if(!boundEffects.containsKey(animation)) {
-            boundEffects.put(animation, new Array<BoundEffect>());
+        String skin = currentSkin;
+        if (!boundEffects.containsKey(skin)) {
+            boundEffects.put(skin, new HashMap<String, Array<BoundEffect>>());
+        }
+        HashMap<String, Array<BoundEffect>> skinAnimations = boundEffects.get(skin);
+        if(!skinAnimations.containsKey(animation)) {
+            skinAnimations.put(animation, new Array<BoundEffect>());
         }
 
-        boundEffects.get(animation).add(effect);
+        skinAnimations.get(animation).add(effect);
     }
 
     private void removeBoundEffect(BoundEffect effect, boolean identity) {
-        if(!boundEffects.containsKey(currentAnimation)) {
-            boundEffects.put(currentAnimation, new Array<BoundEffect>());
+        if (!boundEffects.containsKey(currentSkin)) {
+            boundEffects.put(currentSkin, new HashMap<String, Array<BoundEffect>>());
+        }
+        HashMap<String, Array<BoundEffect>> skinAnimations = boundEffects.get(currentSkin);
+        if(!skinAnimations.containsKey(currentAnimation)) {
+            skinAnimations.put(currentAnimation, new Array<BoundEffect>());
         }
 
-        boundEffects.get(currentAnimation).removeValue(effect, identity);
+        skinAnimations.get(currentAnimation).removeValue(effect, identity);
     }
 
     public boolean isSpineLoaded() {
@@ -134,11 +145,16 @@ public class PreviewWidget extends Actor {
     }
 
     private Array<BoundEffect> getBoundEffects() {
-        if(!boundEffects.containsKey(currentAnimation)) {
-            boundEffects.put(currentAnimation, new Array<BoundEffect>());
+        if (!boundEffects.containsKey(currentSkin)) {
+            boundEffects.put(currentSkin, new HashMap<String, Array<BoundEffect>>());
+        }
+        HashMap<String, Array<BoundEffect>> skinAnimations = boundEffects.get(currentSkin);
+
+        if(!skinAnimations.containsKey(currentAnimation)) {
+            skinAnimations.put(currentAnimation, new Array<BoundEffect>());
         }
 
-        return boundEffects.get(currentAnimation);
+        return skinAnimations.get(currentAnimation);
     }
 
     public void setActivateForDrop(boolean activate) {
@@ -274,8 +290,19 @@ public class PreviewWidget extends Actor {
                 currentAnimation = skeleton.getData().getAnimations().get(0).getName();
             }
         }
+
         // Queue animations on track 0.
         state.setAnimation(0, currentAnimation, true);
+
+        if (currentSkin == null) {
+            currentSkin = skeleton.getData().getSkins().first().getName();
+        } else {
+            if (skeletonData.findSkin(currentSkin) == null) {
+                currentSkin = skeleton.getData().getSkins().first().getName();
+            }
+        }
+
+        skeleton.setSkin(currentSkin);
 
         eventList.clear();
         for(EventData eventData : skeletonData.getEvents()) {
@@ -309,27 +336,41 @@ public class PreviewWidget extends Actor {
 
          //let's sync the boundEffects map
         //remove existing animations and bones.
-        Array<String> removeAnim = new Array<String>();
-        for(String animName: boundEffects.keySet()) {
-            if(animName == null) continue;
-            if(skeletonData.findAnimation(animName) == null) {
-                // remove this from boundEffects
-                removeAnim.add(animName);
+        Array<String> removeSkin = new Array<String>();
+        Set<String> skins = boundEffects.keySet();
+        for (String skinName: skins) {
+            Array<String> removeAnim = new Array<String>();
+            if (skinName == null) continue;
+            if (skeletonData.findSkin(skinName) == null) {
+                removeSkin.add(skinName);
             }
-            Array<BoundEffect> removeEff = new Array<BoundEffect>();
-            for(BoundEffect eff: boundEffects.get(animName)) {
-                // does this bone exist?
-                if(!boneMap.containsKey(eff.getBoneName())) {
-                    removeEff.add(eff);
+            HashMap<String, Array<BoundEffect>> animationsForSkin = boundEffects.get(skinName);
+            for (String animName : animationsForSkin.keySet()) {
+                if (animName == null) continue;
+                if (skeletonData.findAnimation(animName) == null) {
+                    // remove this from boundEffects
+                    removeAnim.add(animName);
+                }
+                Array<BoundEffect> removeEff = new Array<BoundEffect>();
+                for (BoundEffect eff : animationsForSkin.get(animName)) {
+                    // does this bone exist?
+                    if (!boneMap.containsKey(eff.getBoneName())) {
+                        removeEff.add(eff);
+                    }
+                }
+                for (BoundEffect eff : removeEff) {
+                    boundEffects.get(skinName).get(animName).removeValue(eff, true);
                 }
             }
-            for(BoundEffect eff: removeEff) {
-                boundEffects.get(animName).removeValue(eff, true);
+            for(String anim: removeAnim) {
+                boundEffects.get(skinName).remove(anim);
             }
         }
-        for(String anim: removeAnim) {
-            boundEffects.remove(anim);
+
+        for (String skin: removeSkin) {
+            boundEffects.remove(skin);
         }
+
 
         return true;
     }
@@ -356,6 +397,12 @@ public class PreviewWidget extends Actor {
         currentAnimation = targetAnim.getName();
         toolTip("Animation Changed: " + targetAnim.getName());
 
+    }
+
+    public void changeSkin (Skin skin) {
+        skeleton.setSkin(skin);
+        currentSkin = skin.getName();
+        toolTip("Skin Changed: " + skin.getName());
     }
 
     public void addParticle(VFXListModel model) {
@@ -404,10 +451,13 @@ public class PreviewWidget extends Actor {
             return;
         }
 
-        for (String key : boundEffects.keySet()) {
-            Array<BoundEffect> arr = boundEffects.get(key);
-            for(BoundEffect eff : arr) {
-                eff.reloadEffect(((MainStage)getStage()).loadedVFX.get(eff.getName()).path);
+        for (String skinName : boundEffects.keySet()) {
+            HashMap<String, Array<BoundEffect>> skinMap = boundEffects.get(skinName);
+            for (String animationName : skinMap.keySet()) {
+                Array<BoundEffect> arr = skinMap.get(animationName);
+                for (BoundEffect eff : arr) {
+                    eff.reloadEffect(((MainStage) getStage()).loadedVFX.get(eff.getName()).path);
+                }
             }
         }
     }
@@ -867,24 +917,34 @@ public class PreviewWidget extends Actor {
     public ExportData getExportData() {
         ExportData exportData = new ExportData();
 
-        for (Map.Entry<String, Array<BoundEffect>> entry : boundEffects.entrySet()) {
-            String animName = entry.getKey();
-            Array<BoundEffect> value = entry.getValue();
+        for (Map.Entry<String, HashMap<String, Array<BoundEffect>>> entry : boundEffects.entrySet()) {
+            String skinName = entry.getKey();
 
-            if(!exportData.boundVFXList.containsKey(animName)) {
-                exportData.boundVFXList.put(animName, new Array<VFXExportData>());
+            if(!exportData.boundVFXList.containsKey(skinName)) {
+                exportData.boundVFXList.put(skinName, new HashMap<String, Array<VFXExportData>>());
             }
 
-            for(BoundEffect be: value) {
-                VFXExportData vfx = new VFXExportData();
-                vfx.vfxName = be.getName();
-                vfx.boneName = be.getBoneName();
-                vfx.offset = new Vector2(be.getOffset());
-                vfx.startEvent = be.getStartEvent();
-                vfx.endEvent = be.getEndEvent();
-                vfx.isBehind = be.isBehind;
-                vfx.scale = be.scale;
-                exportData.boundVFXList.get(animName).add(vfx);
+            HashMap<String, Array<BoundEffect>> animationMap = entry.getValue();
+            for (Map.Entry<String, Array<BoundEffect>> animationEntry : animationMap.entrySet()) {
+                String animName = animationEntry.getKey();
+                Array<BoundEffect> value = animationEntry.getValue();
+
+                HashMap<String, Array<VFXExportData>> animationExportMap = exportData.boundVFXList.get(skinName);
+                if(!animationExportMap.containsKey(animName)) {
+                    animationExportMap.put(animName, new Array<VFXExportData>());
+                }
+
+                for(BoundEffect be: value) {
+                    VFXExportData vfx = new VFXExportData();
+                    vfx.vfxName = be.getName();
+                    vfx.boneName = be.getBoneName();
+                    vfx.offset = new Vector2(be.getOffset());
+                    vfx.startEvent = be.getStartEvent();
+                    vfx.endEvent = be.getEndEvent();
+                    vfx.isBehind = be.isBehind;
+                    vfx.scale = be.scale;
+                    animationExportMap.get(animName).add(vfx);
+                }
             }
         }
 
@@ -906,23 +966,34 @@ public class PreviewWidget extends Actor {
 
         MainStage mainStage = (MainStage) getStage();
 
-        for (Map.Entry<String,Array<VFXExportData>> entry : exportData.boundVFXList.entrySet()) {
-            String animName = entry.getKey();
-            Array<VFXExportData> vfxList = entry.getValue();
+        for (Map.Entry<String, HashMap<String, Array<VFXExportData>>> entry : exportData.boundVFXList.entrySet()) {
+            String skinName = entry.getKey();
 
-            if(!boundEffects.containsKey(animName)) {
-                boundEffects.put(animName, new Array<BoundEffect>());
+            if(!boundEffects.containsKey(skinName)) {
+                boundEffects.put(skinName, new HashMap<String, Array<BoundEffect>>());
             }
 
-            for(VFXExportData dt: vfxList) {
-                BoundEffect be = new BoundEffect();
-                be.load(mainStage.loadedVFX.get(dt.vfxName).path);
-                be.bind(dt.boneName, dt.offset.x, dt.offset.y);
-                be.setStartEvent(dt.startEvent);
-                be.setEndEvent(dt.endEvent);
-                be.isBehind = dt.isBehind;
-                be.setScale(dt.scale);
-                boundEffects.get(animName).add(be);
+            HashMap<String, Array<VFXExportData>> animationExportMap = entry.getValue();
+            for (Map.Entry<String, Array<VFXExportData>> animationEntry : animationExportMap.entrySet()) {
+                String animName = animationEntry.getKey();
+                Array<VFXExportData> vfxList = animationEntry.getValue();
+
+                HashMap<String, Array<BoundEffect>> animationMap = boundEffects.get(skinName);
+
+                if(!animationMap.containsKey(animName)) {
+                    animationMap.put(animName, new Array<BoundEffect>());
+                }
+
+                for(VFXExportData dt: vfxList) {
+                    BoundEffect be = new BoundEffect();
+                    be.load(mainStage.loadedVFX.get(dt.vfxName).path);
+                    be.bind(dt.boneName, dt.offset.x, dt.offset.y);
+                    be.setStartEvent(dt.startEvent);
+                    be.setEndEvent(dt.endEvent);
+                    be.isBehind = dt.isBehind;
+                    be.setScale(dt.scale);
+                    animationMap.get(animName).add(be);
+                }
             }
         }
 

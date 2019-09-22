@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ExportData {
 
-    public HashMap<String, Array<VFXExportData>> boundVFXList = new HashMap<String, Array<VFXExportData>>();
+    public HashMap<String, HashMap<String, Array<VFXExportData>>> boundVFXList = new HashMap<String, HashMap<String, Array<VFXExportData>>>();
 
     public Array<SFXExportData> sfxExportData = new Array<SFXExportData>();
 
@@ -22,21 +22,26 @@ public class ExportData {
             xml.element("bindings");
             xml.element("vfx");
 
-            for (Map.Entry<String,Array<VFXExportData>> entry : boundVFXList.entrySet()) {
-                String animName = entry.getKey();
-                Array<VFXExportData> vfxArray = entry.getValue();
-                for(VFXExportData dt: vfxArray) {
-                    xml.element("effect").attribute("animation", animName)
-                    .attribute("asset", dt.vfxName)
-                    .attribute("bone", dt.boneName)
-                    .attribute("offsetX", dt.offset.x)
-                    .attribute("offsetY", dt.offset.y)
-                    .attribute("startEvent", dt.startEvent)
-                    .attribute("endEvent", dt.endEvent)
-                    .attribute("behind", dt.isBehind)
-                    .attribute("scale", dt.scale);
+            for (Map.Entry<String,HashMap<String, Array<VFXExportData>>> entry : boundVFXList.entrySet()) {
+                String skinName = entry.getKey();
+                HashMap<String, Array<VFXExportData>> animations = entry.getValue();
+                for (Map.Entry<String, Array<VFXExportData>> animationData : animations.entrySet()) {
+                    String animName = animationData.getKey();
+                    Array<VFXExportData> vfxArray = animationData.getValue();
+                    for(VFXExportData dt: vfxArray) {
+                        xml.element("effect").attribute("skin", skinName)
+                                .attribute("animation", animName)
+                                .attribute("asset", dt.vfxName)
+                                .attribute("bone", dt.boneName)
+                                .attribute("offsetX", dt.offset.x)
+                                .attribute("offsetY", dt.offset.y)
+                                .attribute("startEvent", dt.startEvent)
+                                .attribute("endEvent", dt.endEvent)
+                                .attribute("behind", dt.isBehind)
+                                .attribute("scale", dt.scale);
 
-                    xml.pop();
+                        xml.pop();
+                    }
                 }
             }
             xml.pop();
