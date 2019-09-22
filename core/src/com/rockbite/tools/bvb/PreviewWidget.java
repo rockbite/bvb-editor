@@ -918,13 +918,20 @@ public class PreviewWidget extends Actor {
         ExportData exportData = new ExportData();
 
         for (Map.Entry<String, HashMap<String, Array<BoundEffect>>> entry : boundEffects.entrySet()) {
+            String skinName = entry.getKey();
+
+            if(!exportData.newBoundVFXList.containsKey(skinName)) {
+                exportData.newBoundVFXList.put(skinName, new HashMap<String, Array<VFXExportData>>());
+            }
+
             HashMap<String, Array<BoundEffect>> animationMap = entry.getValue();
             for (Map.Entry<String, Array<BoundEffect>> animationEntry : animationMap.entrySet()) {
                 String animName = animationEntry.getKey();
                 Array<BoundEffect> value = animationEntry.getValue();
 
-                if(!exportData.boundVFXList.containsKey(animName)) {
-                    exportData.boundVFXList.put(animName, new Array<VFXExportData>());
+                HashMap<String, Array<VFXExportData>> animationExportMap = exportData.newBoundVFXList.get(skinName);
+                if(!animationExportMap.containsKey(animName)) {
+                    animationExportMap.put(animName, new Array<VFXExportData>());
                 }
 
                 for(BoundEffect be: value) {
@@ -936,7 +943,7 @@ public class PreviewWidget extends Actor {
                     vfx.endEvent = be.getEndEvent();
                     vfx.isBehind = be.isBehind;
                     vfx.scale = be.scale;
-                    exportData.boundVFXList.get(animName).add(vfx);
+                    animationExportMap.get(animName).add(vfx);
                 }
             }
         }
@@ -959,7 +966,7 @@ public class PreviewWidget extends Actor {
 
         MainStage mainStage = (MainStage) getStage();
 
-        for (Map.Entry<String, Array<VFXExportData>> entry : exportData.boundVFXList.entrySet()) {
+        for (Map.Entry<String, Array<VFXExportData>> entry : exportData.oldBoundVFXList.entrySet()) {
             String skinName = "default";
 
             if(!boundEffects.containsKey(skinName)) {
