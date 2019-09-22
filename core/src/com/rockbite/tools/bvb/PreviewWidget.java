@@ -966,7 +966,7 @@ public class PreviewWidget extends Actor {
 
         MainStage mainStage = (MainStage) getStage();
 
-        for (Map.Entry<String, Array<VFXExportData>> entry : exportData.oldBoundVFXList.entrySet()) {
+        for (Map.Entry<String, Array<VFXExportData>> entry : exportData.boundVFXList.entrySet()) {
             String skinName = "default";
 
             if(!boundEffects.containsKey(skinName)) {
