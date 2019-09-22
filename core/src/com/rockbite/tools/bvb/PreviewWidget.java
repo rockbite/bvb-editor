@@ -918,20 +918,13 @@ public class PreviewWidget extends Actor {
         ExportData exportData = new ExportData();
 
         for (Map.Entry<String, HashMap<String, Array<BoundEffect>>> entry : boundEffects.entrySet()) {
-            String skinName = entry.getKey();
-
-            if(!exportData.boundVFXList.containsKey(skinName)) {
-                exportData.boundVFXList.put(skinName, new HashMap<String, Array<VFXExportData>>());
-            }
-
             HashMap<String, Array<BoundEffect>> animationMap = entry.getValue();
             for (Map.Entry<String, Array<BoundEffect>> animationEntry : animationMap.entrySet()) {
                 String animName = animationEntry.getKey();
                 Array<BoundEffect> value = animationEntry.getValue();
 
-                HashMap<String, Array<VFXExportData>> animationExportMap = exportData.boundVFXList.get(skinName);
-                if(!animationExportMap.containsKey(animName)) {
-                    animationExportMap.put(animName, new Array<VFXExportData>());
+                if(!exportData.boundVFXList.containsKey(animName)) {
+                    exportData.boundVFXList.put(animName, new Array<VFXExportData>());
                 }
 
                 for(BoundEffect be: value) {
@@ -943,7 +936,7 @@ public class PreviewWidget extends Actor {
                     vfx.endEvent = be.getEndEvent();
                     vfx.isBehind = be.isBehind;
                     vfx.scale = be.scale;
-                    animationExportMap.get(animName).add(vfx);
+                    exportData.boundVFXList.get(animName).add(vfx);
                 }
             }
         }
@@ -966,34 +959,31 @@ public class PreviewWidget extends Actor {
 
         MainStage mainStage = (MainStage) getStage();
 
-        for (Map.Entry<String, HashMap<String, Array<VFXExportData>>> entry : exportData.boundVFXList.entrySet()) {
-            String skinName = entry.getKey();
+        for (Map.Entry<String, Array<VFXExportData>> entry : exportData.boundVFXList.entrySet()) {
+            String skinName = "default";
 
             if(!boundEffects.containsKey(skinName)) {
                 boundEffects.put(skinName, new HashMap<String, Array<BoundEffect>>());
             }
 
-            HashMap<String, Array<VFXExportData>> animationExportMap = entry.getValue();
-            for (Map.Entry<String, Array<VFXExportData>> animationEntry : animationExportMap.entrySet()) {
-                String animName = animationEntry.getKey();
-                Array<VFXExportData> vfxList = animationEntry.getValue();
+            String animName = entry.getKey();
+            Array<VFXExportData> vfxList = entry.getValue();
 
-                HashMap<String, Array<BoundEffect>> animationMap = boundEffects.get(skinName);
+            HashMap<String, Array<BoundEffect>> animationMap = boundEffects.get(skinName);
 
-                if(!animationMap.containsKey(animName)) {
-                    animationMap.put(animName, new Array<BoundEffect>());
-                }
+            if (!animationMap.containsKey(animName)) {
+                animationMap.put(animName, new Array<BoundEffect>());
+            }
 
-                for(VFXExportData dt: vfxList) {
-                    BoundEffect be = new BoundEffect();
-                    be.load(mainStage.loadedVFX.get(dt.vfxName).path);
-                    be.bind(dt.boneName, dt.offset.x, dt.offset.y);
-                    be.setStartEvent(dt.startEvent);
-                    be.setEndEvent(dt.endEvent);
-                    be.isBehind = dt.isBehind;
-                    be.setScale(dt.scale);
-                    animationMap.get(animName).add(be);
-                }
+            for (VFXExportData dt : vfxList) {
+                BoundEffect be = new BoundEffect();
+                be.load(mainStage.loadedVFX.get(dt.vfxName).path);
+                be.bind(dt.boneName, dt.offset.x, dt.offset.y);
+                be.setStartEvent(dt.startEvent);
+                be.setEndEvent(dt.endEvent);
+                be.isBehind = dt.isBehind;
+                be.setScale(dt.scale);
+                animationMap.get(animName).add(be);
             }
         }
 
