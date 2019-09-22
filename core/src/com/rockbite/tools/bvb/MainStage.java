@@ -132,7 +132,9 @@ public class MainStage extends Stage {
                 } else if(text.equals("Open Project")) {
                     openProject();
                 } else if(text.equals("Save Project")) {
-                   saveProject();
+                    saveProject();
+                } else if(text.equals("Save Project as")) {
+                    saveProjectAs();
                 } else if(text.equals("Export Binding File")) {
                    exportProject();
                 } else if(text.equals("Exit")) {
@@ -186,6 +188,7 @@ public class MainStage extends Stage {
         //projectMenu.addItem(new MenuItem("New Project", new Image(atlas.findRegion("ic-file-new")), menuListener).setShortcut(Input.Keys.CONTROL_LEFT, Input.Keys.N));
         projectMenu.addItem(new MenuItem("Open Project", new Image(atlas.findRegion("ic-folder")), menuListener).setShortcut(Input.Keys.CONTROL_LEFT, Input.Keys.O));
         projectMenu.addItem(new MenuItem("Save Project", new Image(atlas.findRegion("ic-save")), menuListener).setShortcut(Input.Keys.CONTROL_LEFT, Input.Keys.S));
+        projectMenu.addItem(new MenuItem("Save Project as", new Image(atlas.findRegion("ic-save")), menuListener).setShortcut(Input.Keys.CONTROL_LEFT, Input.Keys.SHIFT_LEFT, Input.Keys.S));
         projectMenu.addSeparator();
         projectMenu.addItem(new MenuItem("Export Binding File", new Image(atlas.findRegion("ic-download")), menuListener).setShortcut(Input.Keys.CONTROL_LEFT, Input.Keys.E));
         projectMenu.addSeparator();
@@ -355,28 +358,32 @@ public class MainStage extends Stage {
 
     public void saveProject() {
         if((projectFilePath == null || projectFilePath.equals(""))) {
-            previewWidget.disableTouch();
-            FileChooser fileChooser = new FileChooser(FileChooser.Mode.SAVE);
-            fileChooser.setSelectionMode(FileChooser.SelectionMode.FILES);
-            fileChooser.setMultiSelectionEnabled(false);
-            fileChooser.setHeight(400);
-            fileChooser.setListener(new FileChooserAdapter() {
-                @Override
-                public void selected (Array<FileHandle> file) {
-                    previewWidget.enableTouch();
-                    String path = file.get(0).path();
-                    projectFilePath = path;
-                    saveProjectFile(path);
-                }
-                @Override
-                public void canceled () {
-                    previewWidget.enableTouch();
-                }
-            });
-            addActor(fileChooser.fadeIn());
+           saveProjectAs();
         } else {
             saveProjectFile(projectFilePath);
         }
+    }
+
+    public void saveProjectAs () {
+        previewWidget.disableTouch();
+        FileChooser fileChooser = new FileChooser(FileChooser.Mode.SAVE);
+        fileChooser.setSelectionMode(FileChooser.SelectionMode.FILES);
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setHeight(400);
+        fileChooser.setListener(new FileChooserAdapter() {
+            @Override
+            public void selected (Array<FileHandle> file) {
+                previewWidget.enableTouch();
+                String path = file.get(0).path();
+                projectFilePath = path;
+                saveProjectFile(path);
+            }
+            @Override
+            public void canceled () {
+                previewWidget.enableTouch();
+            }
+        });
+        addActor(fileChooser.fadeIn());
     }
 
     @Override
