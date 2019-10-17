@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectSet;
 import com.kotcrab.vis.ui.util.dialog.Dialogs;
 
@@ -48,16 +50,21 @@ public class VFXListModel implements IFXListModel {
 
         // check for missing images
         ObjectSet<String> errorPaths = new ObjectSet<String>();
-        ParticleEffect tmp = new ParticleEffect();
-        tmp.loadEmitters(handle);
-        for(ParticleEmitter emitter : tmp.getEmitters()) {
-            if (emitter.getImagePaths().size == 0) continue;
-            for (String imagePath : emitter.getImagePaths()) {
-                String imageName = new File(imagePath.replace('\\', '/')).getName();
-                FileHandle imgHandle = Gdx.files.absolute(dirPath + "\\" + imageName);
-                if(!imgHandle.exists()) {
-                    errorPaths.add(imgHandle.path());
-                }
+
+        //load metadata
+        JsonReader reader = new JsonReader();
+        JsonValue root = reader.parse(handle);
+        JsonValue resourcesList = root.get("metadata").get("resources");
+
+        for(JsonValue resource: resourcesList) {
+            String assetName = resource.asString();
+            String imagePath = assetName; // old stuff
+            String imageName = new File(imagePath.replace('\\', '/')).getName();
+            FileHandle imgHandle = Gdx.files.absolute(dirPath + "\\" + imageName);
+            if(!imgHandle.exists()) {
+                String fileName = imgHandle.path();
+                if(!fileName.contains(".png")) fileName = fileName + ".png";
+                errorPaths.add(fileName);
             }
         }
 
