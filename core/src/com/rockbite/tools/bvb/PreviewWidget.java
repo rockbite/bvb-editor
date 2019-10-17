@@ -21,6 +21,7 @@ import com.kotcrab.vis.ui.util.dialog.Dialogs;
 import com.rockbite.tools.bvb.data.ExportData;
 import com.rockbite.tools.bvb.data.SFXExportData;
 import com.rockbite.tools.bvb.data.VFXExportData;
+import com.rockbite.tools.talos.runtime.render.SpriteBatchParticleRenderer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,11 @@ import java.util.Set;
 public class PreviewWidget extends Actor {
 
     ShapeRenderer shapeRenderer;
+
+    SpriteBatchParticleRenderer talosRenderer;
+
+
+    BVBTalosAssetProvider assetProvider = new BVBTalosAssetProvider();
 
     SkeletonRenderer renderer;
     Skeleton skeleton;
@@ -94,7 +100,8 @@ public class PreviewWidget extends Actor {
     private float scrollScale = 0.4f;
 
 
-    public PreviewWidget() {
+    public PreviewWidget(MainStage stage) {
+        talosRenderer = new SpriteBatchParticleRenderer(stage.getBatch());
         shapeRenderer = new ShapeRenderer();
         renderer = new SkeletonRenderer();
         renderer.setPremultipliedAlpha(false); // PMA results in correct blending without outlines. (actually should be true, not sure why this ruins scene2d later, probably blend screwup, will check later)
@@ -416,9 +423,10 @@ public class PreviewWidget extends Actor {
 
         System.out.println("x: " + x + "  y + " + y);
 
-        BoundEffect effect = new BoundEffect();
-        effect.load(model.path);
-        effect.getEffect().start();
+        assetProvider.setParentPath(Gdx.files.absolute(model.path).parent().path());
+        BoundEffect effect = new BoundEffect(model.path, assetProvider, talosRenderer);
+//        effect.load(model.path);
+        effect.getEffect().restart();
 
 
         Vector2 offset = new Vector2();
@@ -831,7 +839,7 @@ public class PreviewWidget extends Actor {
             Bone bone = boneMap.get(effect.getBoneName());
             effect.setPosition(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y);
 
-            effect.getEffect().draw(batch);
+            effect.talosActor.draw(batch, 1f);
         }
     }
 
@@ -841,7 +849,7 @@ public class PreviewWidget extends Actor {
             Bone bone = boneMap.get(effect.getBoneName());
             effect.setPosition(bone.getWorldX() + effect.getOffset().x, bone.getWorldY() + effect.getOffset().y);
 
-            effect.getEffect().draw(batch);
+            effect.talosActor.draw(batch, 1f);
         }
     }
 
@@ -985,13 +993,13 @@ public class PreviewWidget extends Actor {
                 }
 
                 for(VFXExportData dt: vfxList) {
-                    BoundEffect be = new BoundEffect();
-                    be.load(mainStage.loadedVFX.get(dt.vfxName).path);
+                    assetProvider.setParentPath(Gdx.files.absolute(mainStage.loadedVFX.get(dt.vfxName).path).parent().path());
+                    BoundEffect be = new BoundEffect(mainStage.loadedVFX.get(dt.vfxName).path, assetProvider, talosRenderer);
                     be.bind(dt.boneName, dt.offset.x, dt.offset.y);
                     be.setStartEvent(dt.startEvent);
                     be.setEndEvent(dt.endEvent);
                     be.isBehind = dt.isBehind;
-                    be.setScale(dt.scale);
+//                    be.setScale(dt.scale);
                     animationMap.get(animName).add(be);
                 }
             }
