@@ -235,7 +235,7 @@ public class MainStage extends Stage {
 
 
         // right widget
-        previewWidget = new PreviewWidget();
+        previewWidget = new PreviewWidget(this);
         rightTable.add(previewWidget).fill().expand().grow();
 
         // adding the effect widget as pnael View
