@@ -933,10 +933,8 @@ public class PreviewWidget extends Actor {
                     boundEffects.get(animName).add(be);
                 }
             }
-        }
 
         String projectPath = mainStage.getProjectPath();
-
 
         for(SFXExportData dt: exportData.sfxExportData) {
             mainStage.dropSFX(projectPath + "\\" + dt.sfxName + "." + dt.sfxExtension);

@@ -26,7 +26,8 @@ public class ExportData {
                 String animName = entry.getKey();
                 Array<VFXExportData> vfxArray = entry.getValue();
                 for(VFXExportData dt: vfxArray) {
-                    xml.element("effect").attribute("animation", animName)
+                    xml.element("effect").attribute("skin", "default")
+                            .attribute("animation", animName)
                     .attribute("asset", dt.vfxName)
                     .attribute("bone", dt.boneName)
                     .attribute("offsetX", dt.offset.x)
