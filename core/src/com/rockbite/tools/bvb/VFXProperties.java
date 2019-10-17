@@ -139,7 +139,7 @@ public class VFXProperties extends FXProperties<BoundEffect> {
                 float val = Float.parseFloat(scaleValue.getText());
                 effect.scale = val;
                 if(val == 0) return;
-                effect.setScale(val);
+//                effect.setScale(val);
             }
         });
 

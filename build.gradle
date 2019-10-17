@@ -30,8 +30,9 @@ allprojects {
         visuiVersion = '1.4.2'
         lwjglVersion = "3.2.1"
         lwjglNatives = "natives-windows"
-        spineVersion = "3.9-beta-00b4727833-1"
         kryoVersion = "4.0.1"
+        spineVersion = "00b4727"
+        talosVersion = "671194ea71"
 
     }
 
@@ -66,12 +67,12 @@ project(":desktop") {
 project(":core") {
     apply plugin: "java"
 
-
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
-        compile "com.github.Tom-Ski:spine-runtimes:3.9-beta-SNAPSHOT"
+        compile "com.github.Tom-Ski:spine-runtimes:$spineVersion"
+        compile "com.github.rockbite:talos:$talosVersion"
         compile "com.esotericsoftware:kryo:$kryoVersion"
         
     }
