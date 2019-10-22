@@ -67,6 +67,7 @@ public class BoundEffect {
             particleEffectDescriptor.load(effect);
             particleEffect = particleEffectDescriptor.createEffectInstance();
             particleEffect.setScope(scope);
+            particleEffect.loopable = true;
         }
 
         @Override
@@ -186,9 +187,10 @@ public class BoundEffect {
     public void setStartEvent(String startEvent) {
         this.startEvent = startEvent;
         if(!startEvent.equals("")) {
-//            talosActor.particleEffect.reset(false);
+            talosActor.particleEffect.loopable = false;
             stopped = true;
         } else {
+            talosActor.particleEffect.loopable = true;
             talosActor.particleEffect.restart();
             stopped = false;
         }

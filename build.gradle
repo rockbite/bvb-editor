@@ -32,7 +32,7 @@ allprojects {
         lwjglNatives = "natives-windows"
         kryoVersion = "4.0.1"
         spineVersion = "00b4727"
-        talosVersion = "671194ea71"
+        talosVersion = "7b3823c2fd"
 
     }
 
@@ -72,7 +72,7 @@ project(":core") {
         compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
         compile "com.github.Tom-Ski:spine-runtimes:$spineVersion"
-        compile "com.github.rockbite:talos:$talosVersion"
+        implementation "com.github.rockbite:talos:$talosVersion"
         compile "com.esotericsoftware:kryo:$kryoVersion"
         
     }
