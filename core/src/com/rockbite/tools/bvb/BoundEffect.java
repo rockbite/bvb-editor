@@ -87,9 +87,9 @@ public class BoundEffect {
             }
             long avg = sum / rightTimes.size;
             talosAverageTimeMS = avg / 1000000f;
-            rightTime.setText(talosAverageTimeMS + "ms");
+            //rightTime.setText(talosAverageTimeMS + "ms");
 
-            comparedTime.setText((int)(talosAverageTimeMS / legacyAverageTimeMS * 100) + "%");
+            //comparedTime.setText((int)(talosAverageTimeMS / legacyAverageTimeMS * 100) + "%");
         }
 
         @Override

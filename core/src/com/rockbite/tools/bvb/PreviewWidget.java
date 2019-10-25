@@ -479,6 +479,7 @@ public class PreviewWidget extends Actor {
         for(BoundEffect effect: getBoundEffects()) {
             if(!effect.isStopped()) {
                 effect.getEffect().update(delta * speedMultiplier);
+                //effect.talosActor.act(delta * speedMultiplier);
             }
         }
 

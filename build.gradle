@@ -32,7 +32,7 @@ allprojects {
         lwjglNatives = "natives-windows"
         kryoVersion = "4.0.1"
         spineVersion = "00b4727"
-        talosVersion = "7b3823c2fd"
+        talosVersion = "7a9d8a2cbc"
     }
 
     repositories {
