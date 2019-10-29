@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.util.dialog.Dialogs;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 public class VFXListModel implements IFXListModel {
 
@@ -29,9 +31,22 @@ public class VFXListModel implements IFXListModel {
 
     private MainStage stage;
 
-    public VFXListModel(MainStage stage, String pPath) {
+    public VFXListModel(MainStage stage, String pPath, String bkpPath) {
         this.stage = stage;
         FileHandle handle = Gdx.files.absolute(pPath);
+
+        //search for local file
+        if(bkpPath != null) {
+            String name = handle.name();
+            String bvbPath = bkpPath;
+            FileHandle thisDir = Gdx.files.absolute(bvbPath);
+            String newPath = thisDir + File.separator + name;
+            FileHandle newFileHandle = Gdx.files.absolute(newPath);
+            if (newFileHandle.exists()) {
+                handle = newFileHandle;
+            }
+        }
+
         if(!handle.extension().equals("p")) {
             Dialogs.showErrorDialog (stage, "VFX File must have .p extension");
             return;
@@ -45,7 +60,7 @@ public class VFXListModel implements IFXListModel {
 
         lastModified = handle.lastModified();
 
-        path = pPath;
+        path = handle.path();
         dirPath = handle.parent().path();
 
         // check for missing images

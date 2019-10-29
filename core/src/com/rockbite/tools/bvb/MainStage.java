@@ -461,7 +461,11 @@ public class MainStage extends Stage {
     }
 
     public void dropVFX(String path) {
-        VFXListModel model = new VFXListModel(this, path);
+        String parentPath = null;
+        if(projectPath != null) {
+            Gdx.files.absolute(projectPath).parent().path();
+        }
+        VFXListModel model = new VFXListModel(this, path, parentPath);
         if(loadedVFX.get(model.toString()) != null) return;
         if(!model.wasLoaded()) return;
         fxListAdapter.add(model);
@@ -552,6 +556,8 @@ public class MainStage extends Stage {
 
     public void loadProjectFile(final String path) {
         try {
+            previewWidget.setPixelPerMeter(1, 64);
+
             com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(new FileInputStream(path));
             final ProjectData projectData = kryo.readObject(input, ProjectData.class);
             input.close();
@@ -577,7 +583,7 @@ public class MainStage extends Stage {
                     fxListAdapter.clear();
                     loadedVFX.clear();
                     for (String vfxPath : projectData.vfxPaths) {
-                        VFXListModel model = new VFXListModel(MainStage.this, vfxPath);
+                        VFXListModel model = new VFXListModel(MainStage.this, vfxPath, prj.parent().path());
                         if (loadedVFX.get(model.toString()) != null) return;
                         if (!model.exists) return;
 
@@ -666,7 +672,7 @@ public class MainStage extends Stage {
 
         String path = oldModel.path;
 
-        VFXListModel model = new VFXListModel(this, path);
+        VFXListModel model = new VFXListModel(this, path, Gdx.files.absolute(projectPath).parent().path());
 
         if(!model.wasLoaded()) return;
 
