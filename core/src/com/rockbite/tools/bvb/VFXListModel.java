@@ -25,7 +25,7 @@ public class VFXListModel implements IFXListModel {
 
     public String effectName;
 
-    public boolean exists = false;
+    public boolean exists = true;
 
     public long lastModified;
 
@@ -52,12 +52,6 @@ public class VFXListModel implements IFXListModel {
             return;
         }
 
-        if(handle.exists()) {
-            exists = true;
-        } else {
-            return;
-        }
-
         lastModified = handle.lastModified();
 
         path = handle.path();
@@ -67,36 +61,36 @@ public class VFXListModel implements IFXListModel {
         ObjectSet<String> errorPaths = new ObjectSet<String>();
 
         //load metadata
-        JsonReader reader = new JsonReader();
-        JsonValue root = reader.parse(handle);
-        JsonValue resourcesList = root.get("metadata").get("resources");
+//        JsonReader reader = new JsonReader();
+//        JsonValue root = reader.parse(handle);
+//        JsonValue resourcesList = root.get("metadata").get("resources");
 
-        for(JsonValue resource: resourcesList) {
-            String assetName = resource.asString();
-            String imagePath = assetName; // old stuff
-            String imageName = new File(imagePath.replace('\\', '/')).getName();
-            FileHandle imgHandle = Gdx.files.absolute(dirPath + "\\" + imageName);
-            if(!imgHandle.exists()) {
-                String fileName = imgHandle.path();
-                if(!fileName.contains(".png")) fileName = fileName + ".png";
-                errorPaths.add(fileName);
-            }
-        }
+//        for(JsonValue resource: resourcesList) {
+//            String assetName = resource.asString();
+//            String imagePath = assetName; // old stuff
+//            String imageName = new File(imagePath.replace('\\', '/')).getName();
+//            FileHandle imgHandle = Gdx.files.absolute(dirPath + "\\" + imageName);
+//            if(!imgHandle.exists()) {
+//                String fileName = imgHandle.path();
+//                if(!fileName.contains(".png")) fileName = fileName + ".png";
+//                errorPaths.add(fileName);
+//            }
+//        }
 
-        tryAndFixErrorPaths(errorPaths);
-
-        if(errorPaths.size > 0) {
-            exists = false;
-            String details = "I was looking for the following paths, and they were not found: \n\n";
-            for(String path : errorPaths) {
-                details += path + "\n";
-            }
-
-            details += "\n please note that textures should be in the same location as the .p file.";
-
-            Dialogs.showErrorDialog (stage, "Some Images from this VFX are not found, check details for more info", details);
-            return;
-        }
+//        tryAndFixErrorPaths(errorPaths);
+//
+//        if(errorPaths.size > 0) {
+//            exists = false;
+//            String details = "I was looking for the following paths, and they were not found: \n\n";
+//            for(String path : errorPaths) {
+//                details += path + "\n";
+//            }
+//
+//            details += "\n please note that textures should be in the same location as the .p file.";
+//
+//            Dialogs.showErrorDialog (stage, "Some Images from this VFX are not found, check details for more info", details);
+//            return;
+//        }
 
         effectName = handle.nameWithoutExtension();
     }

@@ -9,8 +9,10 @@ import com.kotcrab.vis.ui.VisUI;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class BvbEditor extends ApplicationAdapter implements DropTargetListener{
@@ -76,9 +78,16 @@ public class BvbEditor extends ApplicationAdapter implements DropTargetListener{
 
 		Transferable t= dtde.getTransferable();
 		if (t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+
+			List<File> list = null;
 			try {
-				List<File> list = (List<File>)dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-				String[] paths = new String[list.size()];
+				list = (List<File>)dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+			} catch (UnsupportedFlavorException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			String[] paths = new String[list.size()];
 				for(int i = 0; i < list.size(); i++) {
 					paths[i] = list.get(i).getAbsolutePath();
 				}
@@ -97,10 +106,7 @@ public class BvbEditor extends ApplicationAdapter implements DropTargetListener{
 				} else {
 					dtde.dropComplete(false);
 				}
-			}
-			catch (Exception ufe) {
-				dtde.dropComplete(false);
-			}
+
 		}
 
 		mainStage.spineDropTargetActivate(false);

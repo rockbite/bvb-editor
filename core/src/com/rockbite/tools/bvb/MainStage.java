@@ -12,9 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Scaling;
-import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.*;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -439,6 +437,97 @@ public class MainStage extends Stage {
 
     public void dropBVB(String path) {
         loadProjectFile(path);
+        writeExport(path);
+    }
+
+    public String writeExport(String path) {
+            Json papaJson = new Json();
+            papaJson.setOutputType(JsonWriter.OutputType.json);
+
+            StringWriter stringWriter = new StringWriter();
+            Json json = new Json();
+            json.setOutputType(JsonWriter.OutputType.json);
+            json.setWriter(stringWriter);
+        try {
+            json.getWriter().object();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Json.Serializable object = new Json.Serializable() {
+
+                @Override
+                public void write (Json json) {
+                    writeExport(json);
+                }
+
+                @Override
+                public void read (Json json, JsonValue jsonData) {
+
+                }
+            };
+
+            path = path.substring(0, path.length() - 4);
+            path += "-new.bvb";
+            FileHandle handle = Gdx.files.absolute(path);
+            handle.writeString(json.prettyPrint(object), false);
+            return stringWriter.toString() + "}";
+    }
+
+    private void writeExport(Json json) {
+        Json.Serializable skeletonSerialziable = new Json.Serializable() {
+
+            @Override
+            public void write (Json json) {
+                writeSkeletonContainer(json);
+            }
+
+            @Override
+            public void read (Json json, JsonValue jsonData) {
+
+            }
+        };
+        json.writeValue("skeleton", skeletonSerialziable);
+        json.writeObjectStart("paths");
+        for (HashMap<String, Array<VFXExportData>> value : getProjectData().exportData.boundVFXList.values()) {
+            for (Array<VFXExportData> vfxExportData : value.values()) {
+                for (VFXExportData vfxExportDatum : vfxExportData) {
+                    json.writeValue(vfxExportDatum.vfxName + ".p", vfxExportDatum.vfxName + ".p");
+                }
+            }
+        }
+
+        json.writeObjectEnd();
+        json.writeValue("pma", false);
+        json.writeValue("speed", 1);
+        json.writeValue("worldSize", 1920);
+        json.writeValue("zoom", 1.0);
+        json.writeValue("cameraPosX", 0);
+        json.writeValue("cameraPosY", 0);
+    }
+
+    private void writeSkeletonContainer (Json json) {
+        ExportData exportData = getProjectData().exportData;
+        HashMap<String, HashMap<String, Array<VFXExportData>>> boundVFXList = exportData.boundVFXList;
+
+        Skeleton skeleton = previewWidget.getSkeleton();
+
+        json.writeValue("skeletonName", skeleton.getData().getName());
+        json.writeArrayStart("boundEffects");
+        for(String skinName: boundVFXList.keySet()) {
+            for(String animationName: boundVFXList.get(skinName).keySet()) {
+                for(VFXExportData effect: boundVFXList.get(skinName).get(animationName)) {
+                    json.writeObjectStart();
+                    json.writeValue("skin", skinName);
+                    json.writeValue("animation", animationName);
+                    json.writeValue("data", effect);
+                    json.writeObjectEnd();
+                }
+            }
+        }
+        json.writeArrayEnd();
+        json.writeValue("currSkin", "default");
+        json.writeValue("currAnimation", skeleton.getData().getAnimations().first().getName());
     }
 
     public void dropSpine(String path) {

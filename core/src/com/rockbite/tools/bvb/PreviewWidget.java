@@ -173,6 +173,10 @@ public class PreviewWidget extends Actor {
         this.sfxProperties = sfxWidget;
     }
 
+    public Skeleton getSkeleton () {
+        return skeleton;
+    }
+
     public void play() {
         paused = false;
         toolTip("Resume animation");
